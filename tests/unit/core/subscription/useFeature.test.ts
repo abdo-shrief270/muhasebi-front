@@ -20,6 +20,12 @@ const mockSubscription = reactive<{
   user: mockUser,
   isAuthenticated: true,
 })
+;(globalThis as any).usePermissions = () => ({
+  permissions: { value: mockUser.permissions },
+  isSuperAdmin: { value: mockUser.role === 'super_admin' },
+  can: (p: string) => mockUser.role === 'super_admin' || mockUser.permissions.includes(p),
+  canAny: (ps: string[]) => mockUser.role === 'super_admin' || ps.some(p => mockUser.permissions.includes(p)),
+})
 ;(globalThis as any).useSubscription = () => ({
   ...mockSubscription,
   hasPlan(allowed: string[]) {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { timeAgo } from '~/utils/timeAgo'
+import { timeAgo } from '~/shared/utils/timeAgo'
 
 describe('timeAgo', () => {
   afterEach(() => {

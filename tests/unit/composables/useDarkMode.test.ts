@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { useDarkMode } from '~/composables/useDarkMode'
+import { useDarkMode } from '~/shared/composables/useDarkMode'
 
 describe('useDarkMode', () => {
   beforeEach(() => {

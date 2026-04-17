@@ -162,6 +162,7 @@
       <!-- Edit SlideOver -->
       <UiSlideOver v-model="editOpen" :title="locale === 'ar' ? 'تعديل العميل' : 'Edit Client'">
         <ClientForm
+          ref="formRef"
           :client="client"
           :loading="editLoading"
           @submit="handleEdit"
@@ -187,6 +188,7 @@
 
 <script setup lang="ts">
 import type { Client } from '~/shared/types/client'
+import type { ApiError } from '~/core/api/errors'
 
 definePageMeta({ layout: false })
 
@@ -197,6 +199,7 @@ const toastStore = useToastStore()
 
 const client = ref<Client | null>(null)
 const loading = ref(true)
+const formRef = ref<{ applyApiErrors: (e: ApiError) => void; reset: () => void } | null>(null)
 const activeTab = ref('invoices')
 const editOpen = ref(false)
 const editLoading = ref(false)
@@ -238,8 +241,10 @@ async function handleEdit(form: any) {
     client.value = await updateClient(client.value!.id, form)
     editOpen.value = false
     toastStore.success(locale.value === 'ar' ? 'تم التحديث' : 'Updated')
-  } catch (e: any) {
-    toastStore.error(e.data?.message || 'Error')
+  } catch (e) {
+    const err = e as ApiError
+    formRef.value?.applyApiErrors(err)
+    toastStore.error(err.message || 'Error')
   } finally {
     editLoading.value = false
   }

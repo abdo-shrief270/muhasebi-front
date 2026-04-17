@@ -74,6 +74,7 @@
       <!-- Create/Edit SlideOver -->
       <UiSlideOver v-model="formOpen" :title="editingClient ? (locale === 'ar' ? 'تعديل العميل' : 'Edit Client') : (locale === 'ar' ? 'إضافة عميل' : 'Add Client')">
         <ClientForm
+          ref="formRef"
           :client="editingClient"
           :loading="formLoading"
           @submit="handleSubmit"
@@ -87,6 +88,7 @@
 
 <script setup lang="ts">
 import type { Client, ClientForm as ClientFormType } from '~/shared/types/client'
+import type { ApiError } from '~/core/api/errors'
 
 definePageMeta({ layout: false })
 
@@ -103,6 +105,7 @@ const page = ref(1)
 const formOpen = ref(false)
 const formLoading = ref(false)
 const editingClient = ref<Client | null>(null)
+const formRef = ref<{ applyApiErrors: (e: ApiError) => void; reset: () => void } | null>(null)
 
 const columns = computed(() => [
   { key: 'name', label: locale.value === 'ar' ? 'الاسم' : 'Name', sortable: true },
@@ -160,8 +163,10 @@ async function handleSubmit(form: Partial<ClientFormType>) {
     }
     formOpen.value = false
     load()
-  } catch (e: any) {
-    toastStore.error(e.data?.message || 'Error')
+  } catch (e) {
+    const err = e as ApiError
+    formRef.value?.applyApiErrors(err)
+    toastStore.error(err.message || 'Error')
   } finally {
     formLoading.value = false
   }

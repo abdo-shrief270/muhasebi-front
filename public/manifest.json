@@ -1,0 +1,18 @@
+{
+  "name": "محاسبي - Muhasebi",
+  "short_name": "محاسبي",
+  "description": "Cloud Accounting System for Egyptian Accounting Firms",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#fafbfc",
+  "theme_color": "#2c3e50",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

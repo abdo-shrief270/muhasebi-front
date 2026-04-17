@@ -125,75 +125,68 @@
 </template>
 
 <script setup lang="ts">
-import type { JournalEntry } from '~/shared/types/accounting'
+import type { ApiError } from '~/core/api/errors'
 
 definePageMeta({ layout: false })
 
 const { locale } = useI18n()
 const route = useRoute()
-const { getEntry, postEntry, reverseEntry, deleteEntry } = useJournalEntries()
 const toastStore = useToastStore()
 
-const entry = ref<JournalEntry | null>(null)
-const loading = ref(true)
-const actionLoading = ref(false)
-const deleteConfirmOpen = ref(false)
+const entryId = computed(() => Number(route.params.id))
+const { data: entry, loading, error, refresh } = useJournalEntry(entryId)
+const { post: postMutation, reverse: reverseMutation, remove: removeMutation } = useJournalEntryMutations()
 
-async function loadEntry() {
-  loading.value = true
-  try {
-    entry.value = await getEntry(Number(route.params.id))
-  } catch {
+watch(error, (e) => {
+  if (e) {
     toastStore.error('Entry not found')
     navigateTo('/journal-entries')
-  } finally {
-    loading.value = false
   }
-}
+})
+
+const actionLoading = computed(() => postMutation.loading.value || reverseMutation.loading.value)
+const deleteConfirmOpen = ref(false)
 
 async function handlePost() {
-  actionLoading.value = true
   try {
-    entry.value = await postEntry(entry.value!.id)
+    await postMutation.mutate(entry.value!.id)
     toastStore.success(locale.value === 'ar' ? 'تم ترحيل القيد' : 'Entry posted')
-  } catch (e: any) {
-    toastStore.error(e.data?.message || 'Error')
-  } finally {
-    actionLoading.value = false
+    refresh()
+  } catch (e) {
+    const err = e as ApiError
+    toastStore.error(err.message || 'Error')
   }
 }
 
 async function handleReverse() {
-  actionLoading.value = true
   try {
-    entry.value = await reverseEntry(entry.value!.id)
+    await reverseMutation.mutate(entry.value!.id)
     toastStore.success(locale.value === 'ar' ? 'تم عكس القيد' : 'Entry reversed')
-  } catch (e: any) {
-    toastStore.error(e.data?.message || 'Error')
-  } finally {
-    actionLoading.value = false
+    refresh()
+  } catch (e) {
+    const err = e as ApiError
+    toastStore.error(err.message || 'Error')
   }
 }
 
 async function handleDelete() {
   try {
-    await deleteEntry(entry.value!.id)
+    await removeMutation.mutate(entry.value!.id)
     toastStore.success(locale.value === 'ar' ? 'تم الحذف' : 'Deleted')
     navigateTo('/journal-entries')
-  } catch (e: any) {
-    toastStore.error(e.data?.message || 'Error')
+  } catch (e) {
+    const err = e as ApiError
+    toastStore.error(err.message || 'Error')
   }
   deleteConfirmOpen.value = false
 }
 
 function statusColor(s: string) {
-  return { draft: 'gray', posted: 'green', reversed: 'orange' }[s] || 'gray'
+  return ({ draft: 'gray', posted: 'green', reversed: 'orange' } as Record<string, string>)[s] || 'gray'
 }
 
 function statusLabel(s: string) {
-  if (locale.value === 'ar') return { draft: 'مسودة', posted: 'مرحّل', reversed: 'معكوس' }[s] || s
+  if (locale.value === 'ar') return ({ draft: 'مسودة', posted: 'مرحّل', reversed: 'معكوس' } as Record<string, string>)[s] || s
   return s
 }
-
-onMounted(loadEntry)
 </script>

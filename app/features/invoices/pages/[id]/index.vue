@@ -220,7 +220,6 @@
 </template>
 
 <script setup lang="ts">
-import type { Invoice } from '~/shared/types/invoice'
 import type { ApiError } from '~/core/api/errors'
 import { paymentFormSchema, type PaymentFormInput } from '~/features/invoices/schemas'
 
@@ -228,15 +227,30 @@ definePageMeta({ layout: false })
 
 const { locale } = useI18n()
 const route = useRoute()
-const { getInvoice, sendInvoice, cancelInvoice, postToGL, deleteInvoice } = useInvoices()
-const { recordPayment: paymentMutation } = useInvoiceMutations()
 const toastStore = useToastStore()
 
-const invoice = ref<Invoice | null>(null)
-const loading = ref(true)
-const actionLoading = ref(false)
+const invoiceId = computed(() => Number(route.params.id))
+const { data: invoice, loading, error, refresh } = useInvoice(invoiceId)
+const {
+  send: sendMutation,
+  cancel: cancelMutation,
+  postToGL: postGLMutation,
+  remove: removeMutation,
+  recordPayment: paymentMutation,
+} = useInvoiceMutations()
+
+const actionLoading = computed(() =>
+  sendMutation.loading.value || cancelMutation.loading.value || postGLMutation.loading.value,
+)
 const paymentOpen = ref(false)
 const deleteOpen = ref(false)
+
+watch(error, (e) => {
+  if (e) {
+    toastStore.error('Invoice not found')
+    navigateTo('/invoices')
+  }
+})
 
 const payment = useZodForm<PaymentFormInput>({
   schema: paymentFormSchema,
@@ -263,43 +277,37 @@ watch(() => paymentOpen.value, (open) => {
   }
 })
 
-async function loadInvoice() {
-  loading.value = true
+async function handleSend() {
   try {
-    invoice.value = await getInvoice(Number(route.params.id))
-  } catch {
-    toastStore.error('Invoice not found')
-    navigateTo('/invoices')
-  } finally {
-    loading.value = false
+    await sendMutation.mutate(invoice.value!.id)
+    toastStore.success(locale.value === 'ar' ? 'تم إرسال الفاتورة' : 'Invoice sent')
+    refresh()
+  } catch (e) {
+    const err = e as ApiError
+    toastStore.error(err.message || 'Error')
   }
 }
 
-async function handleSend() {
-  actionLoading.value = true
-  try {
-    invoice.value = await sendInvoice(invoice.value!.id)
-    toastStore.success(locale.value === 'ar' ? 'تم إرسال الفاتورة' : 'Invoice sent')
-  } catch (e: any) { toastStore.error(e.data?.message || 'Error') }
-  finally { actionLoading.value = false }
-}
-
 async function handleCancel() {
-  actionLoading.value = true
   try {
-    invoice.value = await cancelInvoice(invoice.value!.id)
+    await cancelMutation.mutate(invoice.value!.id)
     toastStore.success(locale.value === 'ar' ? 'تم إلغاء الفاتورة' : 'Invoice cancelled')
-  } catch (e: any) { toastStore.error(e.data?.message || 'Error') }
-  finally { actionLoading.value = false }
+    refresh()
+  } catch (e) {
+    const err = e as ApiError
+    toastStore.error(err.message || 'Error')
+  }
 }
 
 async function handlePostGL() {
-  actionLoading.value = true
   try {
-    invoice.value = await postToGL(invoice.value!.id)
+    await postGLMutation.mutate(invoice.value!.id)
     toastStore.success(locale.value === 'ar' ? 'تم الترحيل' : 'Posted to GL')
-  } catch (e: any) { toastStore.error(e.data?.message || 'Error') }
-  finally { actionLoading.value = false }
+    refresh()
+  } catch (e) {
+    const err = e as ApiError
+    toastStore.error(err.message || 'Error')
+  }
 }
 
 async function handlePayment() {
@@ -310,7 +318,7 @@ async function handlePayment() {
     toastStore.success(locale.value === 'ar' ? 'تم تسجيل الدفعة' : 'Payment recorded')
     paymentOpen.value = false
     payment.reset()
-    loadInvoice()
+    refresh()
   } else if ('error' in result && result.error) {
     const err = result.error as ApiError
     payment.applyApiErrors(err)
@@ -320,10 +328,13 @@ async function handlePayment() {
 
 async function handleDelete() {
   try {
-    await deleteInvoice(invoice.value!.id)
+    await removeMutation.mutate(invoice.value!.id)
     toastStore.success(locale.value === 'ar' ? 'تم الحذف' : 'Deleted')
     navigateTo('/invoices')
-  } catch (e: any) { toastStore.error(e.data?.message || 'Error') }
+  } catch (e) {
+    const err = e as ApiError
+    toastStore.error(err.message || 'Error')
+  }
   deleteOpen.value = false
 }
 
@@ -366,7 +377,6 @@ async function handleEtaPrepare() {
   finally { etaLoading.value = false }
 }
 
-onMounted(loadInvoice)
 </script>
 
 <style scoped>

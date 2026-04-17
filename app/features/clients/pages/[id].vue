@@ -164,7 +164,7 @@
         <ClientForm
           ref="formRef"
           :client="client"
-          :loading="editLoading"
+          :loading="updateMutation.loading.value"
           @submit="handleEdit"
           @cancel="editOpen = false"
         />
@@ -178,7 +178,7 @@
         icon="&#9888;"
         variant="danger"
         :confirm-label="$t('common.delete')"
-        :loading="deleteLoading"
+        :loading="removeMutation.loading.value"
         @confirm="handleDelete"
       />
       </FeatureBoundary>
@@ -187,28 +187,44 @@
 </template>
 
 <script setup lang="ts">
-import type { Client } from '~/shared/types/client'
 import type { ApiError } from '~/core/api/errors'
 
 definePageMeta({ layout: false })
 
 const { locale } = useI18n()
 const route = useRoute()
-const { getClient, updateClient, deleteClient, toggleActive } = useClients()
 const toastStore = useToastStore()
 
-const client = ref<Client | null>(null)
-const loading = ref(true)
+const clientId = computed(() => Number(route.params.id))
+const { data: client, loading, error, refresh } = useClient(clientId)
+const { update: updateMutation, remove: removeMutation, toggleActive: toggleMutation } = useClientMutations()
+
+watch(error, (e) => {
+  if (e) {
+    toastStore.error('Client not found')
+    navigateTo('/clients')
+  }
+})
+
 const formRef = ref<{ applyApiErrors: (e: ApiError) => void; reset: () => void } | null>(null)
 const activeTab = ref('invoices')
 const editOpen = ref(false)
-const editLoading = ref(false)
 const deleteConfirmOpen = ref(false)
-const deleteLoading = ref(false)
 
 const clientInvoices = ref<any[]>([])
 const clientDocuments = ref<any[]>([])
 const api = useApi()
+
+async function loadRelated() {
+  const [invRes, docRes] = await Promise.all([
+    api.get<{ data: any[] }>(`/invoices?client_id=${clientId.value}&per_page=50`).catch(() => ({ data: [] })),
+    api.get<{ data: any[] }>(`/documents?client_id=${clientId.value}&per_page=50`).catch(() => ({ data: [] })),
+  ])
+  clientInvoices.value = invRes.data || []
+  clientDocuments.value = docRes.data || []
+}
+
+watch(clientId, (id) => { if (id) loadRelated() }, { immediate: true })
 
 const tabs = computed(() => [
   { key: 'invoices', label: locale.value === 'ar' ? 'الفواتير' : 'Invoices', count: clientInvoices.value.length },
@@ -216,62 +232,40 @@ const tabs = computed(() => [
   { key: 'notes', label: locale.value === 'ar' ? 'ملاحظات' : 'Notes' },
 ])
 
-async function loadClient() {
-  loading.value = true
-  try {
-    client.value = await getClient(Number(route.params.id))
-    // Fetch client invoices and documents in parallel
-    const [invRes, docRes] = await Promise.all([
-      api.get<{ data: any[] }>(`/invoices?client_id=${route.params.id}&per_page=50`).catch(() => ({ data: [] })),
-      api.get<{ data: any[] }>(`/documents?client_id=${route.params.id}&per_page=50`).catch(() => ({ data: [] })),
-    ])
-    clientInvoices.value = invRes.data || []
-    clientDocuments.value = docRes.data || []
-  } catch {
-    toastStore.error('Client not found')
-    navigateTo('/clients')
-  } finally {
-    loading.value = false
-  }
-}
-
 async function handleEdit(form: any) {
-  editLoading.value = true
   try {
-    client.value = await updateClient(client.value!.id, form)
+    await updateMutation.mutate({ id: client.value!.id, form })
     editOpen.value = false
     toastStore.success(locale.value === 'ar' ? 'تم التحديث' : 'Updated')
+    refresh()
   } catch (e) {
     const err = e as ApiError
     formRef.value?.applyApiErrors(err)
     toastStore.error(err.message || 'Error')
-  } finally {
-    editLoading.value = false
   }
 }
 
 async function handleToggleActive() {
   try {
-    client.value = await toggleActive(client.value!.id)
+    await toggleMutation.mutate(client.value!.id)
     toastStore.success(locale.value === 'ar' ? 'تم التحديث' : 'Updated')
-  } catch (e: any) {
-    toastStore.error(e.data?.message || 'Error')
+    refresh()
+  } catch (e) {
+    const err = e as ApiError
+    toastStore.error(err.message || 'Error')
   }
 }
 
 async function handleDelete() {
-  deleteLoading.value = true
   try {
-    await deleteClient(client.value!.id)
+    await removeMutation.mutate(client.value!.id)
     toastStore.success(locale.value === 'ar' ? 'تم الحذف' : 'Deleted')
     navigateTo('/clients')
-  } catch (e: any) {
-    toastStore.error(e.data?.message || 'Error')
+  } catch (e) {
+    const err = e as ApiError
+    toastStore.error(err.message || 'Error')
   } finally {
-    deleteLoading.value = false
     deleteConfirmOpen.value = false
   }
 }
-
-onMounted(loadClient)
 </script>

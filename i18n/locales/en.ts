@@ -61,6 +61,17 @@ export default {
     eta: 'E-Invoicing',
     settings: 'Settings',
     subscription: 'Subscription',
+    timeBilling: 'Time Billing',
+    notifications: 'Notifications',
+    messaging: 'Messaging',
+    import: 'Import',
+    groups: {
+      main: 'Main',
+      accounting: 'Accounting',
+      more: 'More',
+      management: 'Management',
+      account: 'Account',
+    },
   },
   validation: {
     required: 'This field is required',

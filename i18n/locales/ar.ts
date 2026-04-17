@@ -61,6 +61,17 @@ export default {
     eta: 'الفوترة الإلكترونية',
     settings: 'الإعدادات',
     subscription: 'الاشتراك',
+    timeBilling: 'فوترة الوقت',
+    notifications: 'الإشعارات',
+    messaging: 'الرسائل',
+    import: 'الاستيراد',
+    groups: {
+      main: 'رئيسي',
+      accounting: 'المحاسبة',
+      more: 'أخرى',
+      management: 'إدارة',
+      account: 'الحساب',
+    },
   },
   validation: {
     required: 'هذا الحقل مطلوب',

@@ -28,6 +28,7 @@ export default defineNuxtConfig({
       ...featureDirs('components').map(path => ({ path, pathPrefix: false })),
       { path: '~/core/rbac', pathPrefix: false, pattern: '**/*.vue' },
       { path: '~/core/subscription', pathPrefix: false, pattern: '**/*.vue' },
+      { path: '~/core/reliability', pathPrefix: false, pattern: '**/*.vue' },
     ],
   },
 
@@ -124,6 +125,24 @@ export default defineNuxtConfig({
         },
       },
     },
+  },
+
+  nitro: {
+    routeRules: {
+      '/**': {
+        headers: {
+          'X-Content-Type-Options': 'nosniff',
+          'X-Frame-Options': 'SAMEORIGIN',
+          'Referrer-Policy': 'strict-origin-when-cross-origin',
+          'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+        },
+      },
+    },
+  },
+
+  typescript: {
+    strict: true,
+    typeCheck: false,
   },
 
   app: {

@@ -3,6 +3,32 @@
     <NuxtLayout name="dashboard">
       <UiPageHeader :title="$t('nav.subscription')" :subtitle="locale === 'ar' ? 'إدارة اشتراكك وباقتك' : 'Manage your subscription and plan'" />
 
+      <div
+        v-if="requiredFeature"
+        v-motion
+        :initial="{ opacity: 0, y: -10 }"
+        :enter="{ opacity: 1, y: 0 }"
+        class="max-w-3xl mb-6 border border-amber-200 bg-amber-50/80 rounded-2xl p-5"
+      >
+        <div class="flex items-start gap-4">
+          <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v3.75m0 3.75h.007M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <h4 class="text-sm font-semibold text-amber-900 mb-1">
+              {{ locale === 'ar' ? `ميزة "${requiredFeatureLabel}" غير متاحة في باقتك` : `"${requiredFeatureLabel}" is not available on your plan` }}
+            </h4>
+            <p class="text-sm text-amber-800/80">
+              {{ locale === 'ar'
+                  ? `تتطلب هذه الميزة باقة ${requiredPlanLabel}. قم بالترقية للوصول إليها.`
+                  : `This feature requires a ${requiredPlanLabel} plan. Upgrade to unlock it.` }}
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div v-if="loading"><UiLoadingSkeleton :lines="5" :height="24" /></div>
 
       <div v-else class="max-w-3xl space-y-6">
@@ -68,9 +94,31 @@
 </template>
 
 <script setup lang="ts">
+import { getFeature } from '~/core/subscription/registry'
+
 definePageMeta({ layout: false })
 const { locale } = useI18n()
 const api = useApi()
+const route = useRoute()
+
+const requiredFeatureId = computed(() => {
+  const raw = route.query.required
+  return Array.isArray(raw) ? raw[0] : raw
+})
+
+const requiredFeature = computed(() => requiredFeatureId.value ? getFeature(requiredFeatureId.value) : undefined)
+
+const requiredFeatureLabel = computed(() => {
+  const f = requiredFeature.value
+  if (!f) return requiredFeatureId.value ?? ''
+  return f.navLabel ? (locale.value === 'ar' ? f.id : f.id) : f.id
+})
+
+const requiredPlanLabel = computed(() => {
+  const plans = requiredFeature.value?.plans
+  if (!plans?.length) return ''
+  return plans[0]
+})
 
 const sub = ref<any>(null)
 const usage = ref<any>(null)

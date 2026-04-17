@@ -15,7 +15,7 @@ const mockUser = reactive<{
   user: mockUser,
 })
 
-import { usePermissions } from '~/composables/usePermissions'
+import { usePermissions } from '~/core/rbac/usePermissions'
 
 describe('usePermissions', () => {
   beforeEach(() => {

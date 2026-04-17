@@ -1,8 +1,91 @@
 import type { Invoice, InvoiceForm, Payment, PaymentForm } from '~/shared/types/invoice'
-import type { PaginatedResponse } from '~/shared/types/client'
+import { invoiceService, type InvoiceListParams } from '~/features/invoices/services/invoiceService'
+import { invalidateQuery, useQuery, useMutation } from '~/core/api/query'
+import { generateRequestId } from '~/core/api/requestId'
 
+export function useInvoicesList(params: Ref<InvoiceListParams> | ComputedRef<InvoiceListParams>) {
+  const svc = invoiceService()
+  return useQuery(() => svc.list(unref(params)), {
+    key: () => `invoices:list:${JSON.stringify(unref(params))}`,
+    staleMs: 15_000,
+  })
+}
+
+export function useInvoice(id: Ref<number | null> | ComputedRef<number | null>) {
+  const svc = invoiceService()
+  return useQuery(
+    () => {
+      const v = unref(id)
+      if (v == null) return Promise.reject(new Error('missing id'))
+      return svc.get(v)
+    },
+    {
+      key: () => `invoices:one:${unref(id) ?? ''}`,
+      enabled: computed(() => unref(id) != null),
+    },
+  )
+}
+
+export function useInvoiceMutations() {
+  const svc = invoiceService()
+  const bust = () => invalidateQuery(/^invoices:/)
+
+  const create = useMutation(async (form: Partial<InvoiceForm>) => {
+    const res = await svc.create(form, generateRequestId())
+    bust()
+    return res
+  })
+
+  const update = useMutation(async ({ id, form }: { id: number; form: Partial<InvoiceForm> }) => {
+    const res = await svc.update(id, form)
+    bust()
+    return res
+  })
+
+  const remove = useMutation(async (id: number) => {
+    await svc.remove(id)
+    bust()
+  })
+
+  const send = useMutation(async (id: number) => {
+    const res = await svc.send(id, generateRequestId())
+    bust()
+    return res
+  })
+
+  const cancel = useMutation(async (id: number) => {
+    const res = await svc.cancel(id)
+    bust()
+    return res
+  })
+
+  const postToGL = useMutation(async (id: number) => {
+    const res = await svc.postToGL(id)
+    bust()
+    return res
+  })
+
+  const creditNote = useMutation(async ({ id, lines }: { id: number; lines: unknown[] }) => {
+    const res = await svc.createCreditNote(id, lines)
+    bust()
+    return res
+  })
+
+  const recordPayment = useMutation(async (form: PaymentForm) => {
+    const res = await svc.recordPayment(form, generateRequestId())
+    bust()
+    return res
+  })
+
+  return { create, update, remove, send, cancel, postToGL, creditNote, recordPayment }
+}
+
+/**
+ * Legacy shim — keeps existing pages compiling until each one is migrated
+ * to useInvoicesList / useInvoice / useInvoiceMutations.
+ */
 export function useInvoices() {
-  const api = useApi()
+  const svc = invoiceService()
   const invoices = ref<Invoice[]>([])
   const loading = ref(false)
   const meta = ref({ current_page: 1, last_page: 1, total: 0 })
@@ -10,13 +93,13 @@ export function useInvoices() {
   async function fetchInvoices(params: Record<string, any> = {}) {
     loading.value = true
     try {
-      const query = new URLSearchParams()
-      Object.entries(params).forEach(([k, v]) => {
-        if (v !== '' && v != null) query.set(k, String(v))
-      })
-      const data = await api.get<PaginatedResponse<Invoice>>(`/invoices?${query}`)
+      const data = await svc.list(params as InvoiceListParams)
       invoices.value = data.data
-      meta.value = { current_page: data.meta.current_page, last_page: data.meta.last_page, total: data.meta.total }
+      meta.value = {
+        current_page: data.meta.current_page,
+        last_page: data.meta.last_page,
+        total: data.meta.total,
+      }
     } catch {
       invoices.value = []
     } finally {
@@ -24,53 +107,17 @@ export function useInvoices() {
     }
   }
 
-  async function getInvoice(id: number): Promise<Invoice> {
-    const data = await api.get<{ data: Invoice }>(`/invoices/${id}`)
-    return data.data
-  }
-
-  async function createInvoice(form: Partial<InvoiceForm>): Promise<Invoice> {
-    const data = await api.post<{ data: Invoice }>('/invoices', form)
-    return data.data
-  }
-
-  async function updateInvoice(id: number, form: Partial<InvoiceForm>): Promise<Invoice> {
-    const data = await api.put<{ data: Invoice }>(`/invoices/${id}`, form)
-    return data.data
-  }
-
-  async function deleteInvoice(id: number): Promise<void> {
-    await api.delete(`/invoices/${id}`)
-  }
-
-  async function sendInvoice(id: number): Promise<Invoice> {
-    const data = await api.post<{ data: Invoice }>(`/invoices/${id}/send`)
-    return data.data
-  }
-
-  async function cancelInvoice(id: number): Promise<Invoice> {
-    const data = await api.post<{ data: Invoice }>(`/invoices/${id}/cancel`)
-    return data.data
-  }
-
-  async function postToGL(id: number): Promise<Invoice> {
-    const data = await api.post<{ data: Invoice }>(`/invoices/${id}/post-to-gl`)
-    return data.data
-  }
-
-  async function createCreditNote(id: number, lines: any[]): Promise<Invoice> {
-    const data = await api.post<{ data: Invoice }>(`/invoices/${id}/credit-note`, { lines })
-    return data.data
-  }
-
-  async function recordPayment(form: PaymentForm): Promise<Payment> {
-    const data = await api.post<{ data: Payment }>('/payments', form)
-    return data.data
-  }
-
   return {
     invoices, loading, meta,
-    fetchInvoices, getInvoice, createInvoice, updateInvoice, deleteInvoice,
-    sendInvoice, cancelInvoice, postToGL, createCreditNote, recordPayment,
+    fetchInvoices,
+    getInvoice:       (id: number) => svc.get(id),
+    createInvoice:    (f: Partial<InvoiceForm>) => svc.create(f, generateRequestId()),
+    updateInvoice:    (id: number, f: Partial<InvoiceForm>) => svc.update(id, f),
+    deleteInvoice:    (id: number) => svc.remove(id),
+    sendInvoice:      (id: number) => svc.send(id, generateRequestId()),
+    cancelInvoice:    (id: number) => svc.cancel(id),
+    postToGL:         (id: number) => svc.postToGL(id),
+    createCreditNote: (id: number, lines: any[]) => svc.createCreditNote(id, lines),
+    recordPayment:    (f: PaymentForm) => svc.recordPayment(f, generateRequestId()),
   }
 }

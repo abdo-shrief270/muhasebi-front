@@ -1,7 +1,6 @@
 export function useBlog() {
   const api = useApi()
 
-  // Public
   async function getPosts(params?: { page?: number; category?: string; tag?: string; search?: string }) {
     const q = new URLSearchParams()
     if (params?.page) q.set('page', String(params.page))
@@ -40,33 +39,7 @@ export function useBlog() {
     } catch { return [] }
   }
 
-  // Admin
-  async function getAdminPosts(params?: { page?: number; search?: string }) {
-    const q = new URLSearchParams()
-    if (params?.page) q.set('page', String(params.page))
-    if (params?.search) q.set('search', params.search)
-    return api.get<PaginatedBlogPosts>(`/admin/blog/posts?${q.toString()}`)
-  }
-  async function getAdminPost(id: number) { return api.get<{ data: BlogPost }>(`/admin/blog/posts/${id}`) }
-  async function createPost(data: any) { return api.post<{ data: BlogPost }>('/admin/blog/posts', data) }
-  async function updatePost(id: number, data: any) { return api.put<{ data: BlogPost }>(`/admin/blog/posts/${id}`, data) }
-  async function deletePost(id: number) { return api.delete(`/admin/blog/posts/${id}`) }
-
-  async function getAdminCategories() { return api.get<{ data: BlogCategory[] }>('/admin/blog/categories') }
-  async function createCategory(data: any) { return api.post('/admin/blog/categories', data) }
-  async function updateCategory(id: number, data: any) { return api.put(`/admin/blog/categories/${id}`, data) }
-  async function deleteCategory(id: number) { return api.delete(`/admin/blog/categories/${id}`) }
-
-  async function getAdminTags() { return api.get<{ data: BlogTag[] }>('/admin/blog/tags') }
-  async function createTag(data: any) { return api.post('/admin/blog/tags', data) }
-  async function deleteTag(id: number) { return api.delete(`/admin/blog/tags/${id}`) }
-
-  return {
-    getPosts, getPost, getFeatured, getCategories, getTags,
-    getAdminPosts, getAdminPost, createPost, updatePost, deletePost,
-    getAdminCategories, createCategory, updateCategory, deleteCategory,
-    getAdminTags, createTag, deleteTag,
-  }
+  return { getPosts, getPost, getFeatured, getCategories, getTags }
 }
 
 export interface BlogPost {

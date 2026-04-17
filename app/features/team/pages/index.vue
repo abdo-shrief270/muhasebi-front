@@ -101,7 +101,7 @@ async function load() {
   try {
     const [teamRes, rolesRes] = await Promise.all([
       api.get<{ data: any[] }>('/team'),
-      api.get<{ data: any[] }>('/admin/roles').catch(() => ({ data: [{ name: 'admin' }, { name: 'accountant' }, { name: 'auditor' }] })),
+      api.get<{ data: any[] }>('/roles').catch(() => ({ data: [{ name: 'admin' }, { name: 'accountant' }, { name: 'auditor' }] })),
     ])
     members.value = teamRes.data
     availableRoles.value = rolesRes.data

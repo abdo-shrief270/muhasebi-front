@@ -5,6 +5,7 @@ export interface QueuedMutation {
   method: 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   url: string
   body?: unknown
+  idempotencyKey?: string
   createdAt: number
   attempts: number
 }
@@ -23,9 +24,15 @@ function save(q: QueuedMutation[]) {
 
 export const useOfflineQueue = defineStore('offlineQueue', () => {
   const queue = ref<QueuedMutation[]>(load())
+  const isFlushing = ref(false)
 
   function enqueue(m: Omit<QueuedMutation, 'id' | 'createdAt' | 'attempts'>) {
-    const item: QueuedMutation = { ...m, id: crypto.randomUUID(), createdAt: Date.now(), attempts: 0 }
+    const item: QueuedMutation = {
+      ...m,
+      id: crypto.randomUUID(),
+      createdAt: Date.now(),
+      attempts: 0,
+    }
     queue.value = [...queue.value, item]
     save(queue.value)
     return item
@@ -37,20 +44,28 @@ export const useOfflineQueue = defineStore('offlineQueue', () => {
   }
 
   async function flush() {
+    if (isFlushing.value) return
     if (!queue.value.length) return
-    const api = useApi()
-    const pending = [...queue.value]
-    for (const item of pending) {
-      try {
-        await (api as any)[item.method.toLowerCase()](item.url, item.body)
-        remove(item.id)
-      } catch {
-        item.attempts += 1
-        save(queue.value)
-        if (item.attempts > 5) remove(item.id)
+    isFlushing.value = true
+    try {
+      const api = useApi()
+      const pending = [...queue.value]
+      for (const item of pending) {
+        try {
+          const opts = item.idempotencyKey ? { idempotencyKey: item.idempotencyKey } : undefined
+          const method = item.method.toLowerCase() as 'post' | 'put' | 'patch' | 'delete'
+          await (api as any)[method](item.url, item.body, opts)
+          remove(item.id)
+        } catch {
+          item.attempts += 1
+          save(queue.value)
+          if (item.attempts > 5) remove(item.id)
+        }
       }
+    } finally {
+      isFlushing.value = false
     }
   }
 
-  return { queue, enqueue, remove, flush }
+  return { queue, isFlushing, enqueue, remove, flush }
 })

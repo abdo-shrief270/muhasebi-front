@@ -1,23 +1,35 @@
 type Level = 'debug' | 'info' | 'warn' | 'error'
 
-interface LogContext {
+export interface LogContext {
   tenantId?: string
   featureId?: string
   userId?: number | string
   [key: string]: unknown
 }
 
+export interface TelemetrySink {
+  log?: (level: Level, message: string, ctx: LogContext) => void
+  capture?: (err: unknown, ctx: LogContext) => void
+}
+
+let sink: TelemetrySink = {}
+
+export function setTelemetrySink(next: TelemetrySink) {
+  sink = next
+}
+
 function baseContext(): LogContext {
-  const tenantId = useTenantId?.() || undefined
-  const userId = useAuthStore?.().user?.id
+  const tenantId = (() => { try { return useTenantId() } catch { return undefined } })() || undefined
+  const userId = (() => { try { return useAuthStore().user?.id } catch { return undefined } })()
   return { tenantId, userId }
 }
 
 function emit(level: Level, message: string, ctx?: LogContext) {
-  const payload = { level, message, ts: new Date().toISOString(), ...baseContext(), ...ctx }
+  const fullCtx: LogContext = { ...baseContext(), ...ctx }
+  const payload = { level, message, ts: new Date().toISOString(), ...fullCtx }
   if (level === 'error' || level === 'warn') console[level](payload)
   else if (import.meta.dev) console[level](payload)
-  // hook point: forward to Sentry / backend log ingestion
+  try { sink.log?.(level, message, fullCtx) } catch {}
 }
 
 export const logger = {
@@ -29,5 +41,7 @@ export const logger = {
 
 export function captureException(err: unknown, ctx?: LogContext) {
   const e = err as Error
-  emit('error', e?.message ?? 'unknown error', { ...ctx, stack: e?.stack, name: e?.name })
+  const fullCtx: LogContext = { ...baseContext(), ...ctx, stack: e?.stack, name: e?.name }
+  emit('error', e?.message ?? 'unknown error', fullCtx)
+  try { sink.capture?.(err, fullCtx) } catch {}
 }

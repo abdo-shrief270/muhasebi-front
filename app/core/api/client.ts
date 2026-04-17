@@ -1,7 +1,12 @@
 import { ofetch, type FetchOptions } from 'ofetch'
 import { toApiError } from './errors'
+import { generateRequestId } from './requestId'
 
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
+
+interface AppFetchOptions extends FetchOptions {
+  idempotencyKey?: string
+}
 
 export function useApi() {
   const config = useRuntimeConfig()
@@ -10,6 +15,7 @@ export function useApi() {
   function buildHeaders(): Record<string, string> {
     const headers: Record<string, string> = {
       Accept: 'application/json',
+      'X-Client-Version': (config.public.appEnv as string) || 'dev',
     }
 
     const token = authStore.token || useCookie('auth_token').value || ''
@@ -35,7 +41,12 @@ export function useApi() {
     timeout: 30_000,
 
     onRequest({ options }) {
-      options.headers = { ...options.headers, ...buildHeaders() }
+      const requestId = generateRequestId()
+      options.headers = {
+        ...options.headers,
+        ...buildHeaders(),
+        'X-Request-ID': requestId,
+      }
     },
 
     onResponseError({ response }) {
@@ -49,17 +60,27 @@ export function useApi() {
           useToastStore().error(response._data?.message || 'Insufficient permissions.')
         } catch {}
       }
+      if (response.status === 429 && import.meta.client) {
+        try {
+          useToastStore().error(response._data?.message || 'Rate limited. Please retry shortly.')
+        } catch {}
+      }
     },
   })
 
-  async function request<T>(method: Method, url: string, body?: any, opts?: FetchOptions): Promise<T> {
+  async function request<T>(method: Method, url: string, body?: any, opts?: AppFetchOptions): Promise<T> {
     try {
       const shouldRetry = method === 'GET'
+      const headers: Record<string, string> = { ...(opts?.headers as any) }
+      if (method !== 'GET' && opts?.idempotencyKey) {
+        headers['Idempotency-Key'] = opts.idempotencyKey
+      }
       return (await api<T>(url, {
         method,
         body,
         retry: shouldRetry ? 2 : 0,
         ...opts,
+        headers,
       } as FetchOptions)) as T
     } catch (e) {
       throw toApiError(e)
@@ -67,11 +88,11 @@ export function useApi() {
   }
 
   return {
-    get:    <T>(url: string, opts?: FetchOptions) => request<T>('GET', url, undefined, opts),
-    post:   <T>(url: string, body?: any, opts?: FetchOptions) => request<T>('POST', url, body, opts),
-    put:    <T>(url: string, body?: any, opts?: FetchOptions) => request<T>('PUT', url, body, opts),
-    patch:  <T>(url: string, body?: any, opts?: FetchOptions) => request<T>('PATCH', url, body, opts),
-    delete: <T>(url: string, opts?: FetchOptions) => request<T>('DELETE', url, undefined, opts),
+    get:    <T>(url: string, opts?: AppFetchOptions) => request<T>('GET', url, undefined, opts),
+    post:   <T>(url: string, body?: any, opts?: AppFetchOptions) => request<T>('POST', url, body, opts),
+    put:    <T>(url: string, body?: any, opts?: AppFetchOptions) => request<T>('PUT', url, body, opts),
+    patch:  <T>(url: string, body?: any, opts?: AppFetchOptions) => request<T>('PATCH', url, body, opts),
+    delete: <T>(url: string, opts?: AppFetchOptions) => request<T>('DELETE', url, undefined, opts),
     raw: api,
   }
 }

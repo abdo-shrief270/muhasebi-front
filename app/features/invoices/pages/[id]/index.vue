@@ -146,28 +146,56 @@
           <form @submit.prevent="handlePayment" class="space-y-4">
             <div>
               <label class="form-label">{{ locale === 'ar' ? 'المبلغ' : 'Amount' }} *</label>
-              <input v-model="paymentForm.amount" type="number" step="0.01" :max="invoice.balance_due" required class="input-field font-mono" dir="ltr" />
-              <p class="text-xs text-gray-400 mt-1">{{ locale === 'ar' ? 'المستحق:' : 'Due:' }} {{ Number(invoice.balance_due).toLocaleString() }}</p>
+              <input
+                v-model="payment.values.amount"
+                type="number"
+                step="0.01"
+                :max="invoice.balance_due"
+                class="input-field font-mono"
+                :class="{ 'input-error': payment.errors.value.amount }"
+                dir="ltr"
+                @input="payment.clearError('amount')"
+              />
+              <p v-if="payment.errors.value.amount" class="form-error">{{ payment.errors.value.amount }}</p>
+              <p v-else class="text-xs text-gray-400 mt-1">{{ locale === 'ar' ? 'المستحق:' : 'Due:' }} {{ Number(invoice.balance_due).toLocaleString() }}</p>
             </div>
             <div>
               <label class="form-label">{{ locale === 'ar' ? 'التاريخ' : 'Date' }} *</label>
-              <input v-model="paymentForm.date" type="date" required class="input-field" />
+              <input
+                v-model="payment.values.date"
+                type="date"
+                class="input-field"
+                :class="{ 'input-error': payment.errors.value.date }"
+                @input="payment.clearError('date')"
+              />
+              <p v-if="payment.errors.value.date" class="form-error">{{ payment.errors.value.date }}</p>
             </div>
             <div>
               <label class="form-label">{{ locale === 'ar' ? 'طريقة الدفع' : 'Method' }} *</label>
-              <select v-model="paymentForm.method" required class="input-field">
+              <select
+                v-model="payment.values.method"
+                class="input-field"
+                :class="{ 'input-error': payment.errors.value.method }"
+                @change="payment.clearError('method')"
+              >
                 <option value="cash">{{ locale === 'ar' ? 'نقدي' : 'Cash' }}</option>
                 <option value="bank_transfer">{{ locale === 'ar' ? 'تحويل بنكي' : 'Bank Transfer' }}</option>
-                <option value="check">{{ locale === 'ar' ? 'شيك' : 'Check' }}</option>
+                <option value="cheque">{{ locale === 'ar' ? 'شيك' : 'Cheque' }}</option>
                 <option value="credit_card">{{ locale === 'ar' ? 'بطاقة ائتمان' : 'Credit Card' }}</option>
+                <option value="other">{{ locale === 'ar' ? 'أخرى' : 'Other' }}</option>
               </select>
+              <p v-if="payment.errors.value.method" class="form-error">{{ payment.errors.value.method }}</p>
             </div>
             <div>
               <label class="form-label">{{ locale === 'ar' ? 'المرجع' : 'Reference' }}</label>
-              <input v-model="paymentForm.reference" type="text" class="input-field" />
+              <input v-model="payment.values.reference" type="text" class="input-field" />
+            </div>
+            <div>
+              <label class="form-label">{{ locale === 'ar' ? 'ملاحظات' : 'Notes' }}</label>
+              <textarea v-model="payment.values.notes" rows="2" class="input-field resize-none"></textarea>
             </div>
             <div class="flex gap-3 pt-4 border-t border-gray-100">
-              <UiAppButton type="submit" variant="primary" :loading="paymentLoading">
+              <UiAppButton type="submit" variant="primary" :loading="payment.submitting.value || paymentMutation.loading.value">
                 {{ locale === 'ar' ? 'تسجيل الدفعة' : 'Record Payment' }}
               </UiAppButton>
               <UiAppButton variant="outline" @click="paymentOpen = false">{{ $t('common.cancel') }}</UiAppButton>
@@ -193,27 +221,46 @@
 
 <script setup lang="ts">
 import type { Invoice } from '~/shared/types/invoice'
+import type { ApiError } from '~/core/api/errors'
+import { paymentFormSchema, type PaymentFormInput } from '~/features/invoices/schemas'
 
 definePageMeta({ layout: false })
 
 const { locale } = useI18n()
 const route = useRoute()
-const { getInvoice, sendInvoice, cancelInvoice, postToGL, deleteInvoice, recordPayment } = useInvoices()
+const { getInvoice, sendInvoice, cancelInvoice, postToGL, deleteInvoice } = useInvoices()
+const { recordPayment: paymentMutation } = useInvoiceMutations()
 const toastStore = useToastStore()
 
 const invoice = ref<Invoice | null>(null)
 const loading = ref(true)
 const actionLoading = ref(false)
 const paymentOpen = ref(false)
-const paymentLoading = ref(false)
 const deleteOpen = ref(false)
 
-const paymentForm = reactive({
-  amount: '',
-  date: new Date().toISOString().split('T')[0],
-  method: 'bank_transfer',
-  reference: '',
-  notes: '',
+const payment = useZodForm<PaymentFormInput>({
+  schema: paymentFormSchema,
+  initial: {
+    invoice_id: 0,
+    amount: 0,
+    date: new Date().toISOString().slice(0, 10),
+    method: 'bank_transfer',
+    reference: '',
+    notes: '',
+  },
+})
+
+watch(() => paymentOpen.value, (open) => {
+  if (open && invoice.value) {
+    payment.setValues({
+      invoice_id: invoice.value.id,
+      amount: Number(invoice.value.balance_due) || 0,
+      date: new Date().toISOString().slice(0, 10),
+      method: 'bank_transfer',
+      reference: '',
+      notes: '',
+    })
+  }
 })
 
 async function loadInvoice() {
@@ -256,23 +303,19 @@ async function handlePostGL() {
 }
 
 async function handlePayment() {
-  paymentLoading.value = true
-  try {
-    await recordPayment({
-      invoice_id: invoice.value!.id,
-      amount: Number(paymentForm.amount),
-      date: paymentForm.date,
-      method: paymentForm.method,
-      reference: paymentForm.reference,
-      notes: paymentForm.notes,
-    })
+  const result = await payment.handleSubmit(async (data) => {
+    await paymentMutation.mutate(data as any)
+  })
+  if (result.ok) {
     toastStore.success(locale.value === 'ar' ? 'تم تسجيل الدفعة' : 'Payment recorded')
     paymentOpen.value = false
-    paymentForm.amount = ''
-    paymentForm.reference = ''
+    payment.reset()
     loadInvoice()
-  } catch (e: any) { toastStore.error(e.data?.message || 'Error') }
-  finally { paymentLoading.value = false }
+  } else if ('error' in result && result.error) {
+    const err = result.error as ApiError
+    payment.applyApiErrors(err)
+    toastStore.error(err.message || 'Error')
+  }
 }
 
 async function handleDelete() {
@@ -328,5 +371,7 @@ onMounted(loadInvoice)
 
 <style scoped>
 .input-field { @apply w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all text-sm bg-gray-50/50; }
+.input-error { @apply border-red-300 focus:ring-red-500/20 focus:border-red-500; }
 .form-label { @apply block text-sm font-medium text-gray-600 mb-1; }
+.form-error { @apply mt-1 text-xs text-red-500; }
 </style>

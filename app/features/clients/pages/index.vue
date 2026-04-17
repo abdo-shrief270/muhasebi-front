@@ -2,7 +2,7 @@
   <div>
     <NuxtLayout name="dashboard">
       <FeatureBoundary id="clients">
-      <UiPageHeader :title="$t('nav.clients')" :subtitle="locale === 'ar' ? `${meta.total} عميل` : `${meta.total} clients`">
+      <UiPageHeader :title="$t('nav.clients')" :subtitle="locale === 'ar' ? `${total} عميل` : `${total} clients`">
         <template #actions>
           <UiAppButton variant="primary" @click="openCreate">
             {{ locale === 'ar' ? '+ إضافة عميل' : '+ Add Client' }}
@@ -12,27 +12,26 @@
 
       <UiDataTable
         :columns="columns"
-        :rows="clients"
+        :rows="rows"
         :loading="loading"
         :exportable="true"
-        :current-page="meta.current_page"
-        :total-pages="meta.last_page"
+        :current-page="currentPage"
+        :total-pages="lastPage"
         :sort-by="sortBy"
         :sort-dir="sortDir"
         :empty-title="locale === 'ar' ? 'لا يوجد عملاء' : 'No clients yet'"
         :empty-description="locale === 'ar' ? 'أضف أول عميل لك' : 'Add your first client'"
-        @row-click="(row) => navigateTo(`/clients/${row.id}`)"
-        @page-change="(p) => { page = p; load() }"
+        @row-click="(row: any) => navigateTo(`/clients/${row.id}`)"
+        @page-change="(p: number) => { page = p }"
         @sort="handleSort"
       >
         <template #header>
           <div class="flex items-center gap-3 flex-1 flex-wrap">
-            <UiSearchInput v-model="search" class="flex-1 min-w-[200px]" @update:model-value="debouncedLoad" />
+            <UiSearchInput v-model="searchInput" class="flex-1 min-w-[200px]" />
             <UiFilterDropdown
               v-model="statusFilter"
               :options="statusOptions"
               :all-label="$t('common.all')"
-              @update:model-value="load"
             />
           </div>
         </template>
@@ -71,12 +70,11 @@
         </template>
       </UiDataTable>
 
-      <!-- Create/Edit SlideOver -->
       <UiSlideOver v-model="formOpen" :title="editingClient ? (locale === 'ar' ? 'تعديل العميل' : 'Edit Client') : (locale === 'ar' ? 'إضافة عميل' : 'Add Client')">
         <ClientForm
           ref="formRef"
           :client="editingClient"
-          :loading="formLoading"
+          :loading="createMutation.loading.value || updateMutation.loading.value"
           @submit="handleSubmit"
           @cancel="formOpen = false"
         />
@@ -89,21 +87,39 @@
 <script setup lang="ts">
 import type { Client, ClientForm as ClientFormType } from '~/shared/types/client'
 import type { ApiError } from '~/core/api/errors'
+import type { ClientListParams } from '~/features/clients/services/clientService'
 
 definePageMeta({ layout: false })
 
 const { locale } = useI18n()
-const { clients, loading, meta, fetchClients, createClient, updateClient } = useClients()
 const toastStore = useToastStore()
 
-const search = ref('')
+const searchInput = ref('')
+const search = refDebounced(searchInput, 400)
 const statusFilter = ref('')
 const sortBy = ref('name')
 const sortDir = ref<'asc' | 'desc'>('asc')
 const page = ref(1)
 
+watch([search, statusFilter], () => { page.value = 1 })
+
+const params = computed<ClientListParams>(() => ({
+  search: search.value || undefined,
+  is_active: statusFilter.value === '' ? undefined : statusFilter.value === 'true',
+  sort_by: sortBy.value,
+  sort_dir: sortDir.value,
+  page: page.value,
+}))
+
+const { data, loading } = useClientsList(params)
+const { create: createMutation, update: updateMutation } = useClientMutations()
+
+const rows = computed(() => data.value?.data ?? [])
+const total = computed(() => data.value?.meta.total ?? 0)
+const currentPage = computed(() => data.value?.meta.current_page ?? 1)
+const lastPage = computed(() => data.value?.meta.last_page ?? 1)
+
 const formOpen = ref(false)
-const formLoading = ref(false)
 const editingClient = ref<Client | null>(null)
 const formRef = ref<{ applyApiErrors: (e: ApiError) => void; reset: () => void } | null>(null)
 
@@ -120,25 +136,9 @@ const statusOptions = computed(() => [
   { value: 'false', label: locale.value === 'ar' ? 'غير نشط' : 'Inactive' },
 ])
 
-function load() {
-  fetchClients({
-    search: search.value,
-    is_active: statusFilter.value || undefined,
-    sort_by: sortBy.value,
-    sort_dir: sortDir.value,
-    page: page.value,
-  })
-}
-
-const debouncedLoad = useDebounceFn(() => {
-  page.value = 1
-  load()
-}, 400)
-
 function handleSort(key: string, dir: 'asc' | 'desc') {
   sortBy.value = key
   sortDir.value = dir
-  load()
 }
 
 function openCreate() {
@@ -152,25 +152,19 @@ function openEdit(client: Client) {
 }
 
 async function handleSubmit(form: Partial<ClientFormType>) {
-  formLoading.value = true
   try {
     if (editingClient.value) {
-      await updateClient(editingClient.value.id, form)
+      await updateMutation.mutate({ id: editingClient.value.id, form })
       toastStore.success(locale.value === 'ar' ? 'تم تحديث العميل' : 'Client updated')
     } else {
-      await createClient(form)
+      await createMutation.mutate(form)
       toastStore.success(locale.value === 'ar' ? 'تم إضافة العميل' : 'Client created')
     }
     formOpen.value = false
-    load()
   } catch (e) {
     const err = e as ApiError
     formRef.value?.applyApiErrors(err)
     toastStore.error(err.message || 'Error')
-  } finally {
-    formLoading.value = false
   }
 }
-
-onMounted(load)
 </script>

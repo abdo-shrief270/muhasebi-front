@@ -2,7 +2,7 @@
   <div>
     <NuxtLayout name="dashboard">
       <FeatureBoundary id="invoices">
-      <UiPageHeader :title="$t('nav.invoices')" :subtitle="locale === 'ar' ? `${meta.total} فاتورة` : `${meta.total} invoices`">
+      <UiPageHeader :title="$t('nav.invoices')" :subtitle="locale === 'ar' ? `${total} فاتورة` : `${total} invoices`">
         <template #actions>
           <UiAppButton variant="primary" @click="navigateTo('/invoices/create')">
             {{ locale === 'ar' ? '+ فاتورة جديدة' : '+ New Invoice' }}
@@ -12,18 +12,18 @@
 
       <UiDataTable
         :columns="columns"
-        :rows="invoices"
+        :rows="rows"
         :loading="loading"
-        :current-page="meta.current_page"
-        :total-pages="meta.last_page"
+        :current-page="currentPage"
+        :total-pages="lastPage"
         :empty-title="locale === 'ar' ? 'لا توجد فواتير' : 'No invoices yet'"
-        @row-click="(row) => navigateTo(`/invoices/${row.id}`)"
-        @page-change="(p) => { page = p; load() }"
+        @row-click="(row: any) => navigateTo(`/invoices/${row.id}`)"
+        @page-change="(p: number) => { page = p }"
       >
         <template #header>
-          <UiSearchInput v-model="search" class="flex-1 min-w-[200px]" @update:model-value="debouncedLoad" />
-          <UiFilterDropdown v-model="statusFilter" :options="statusOptions" :all-label="$t('common.all')" @update:model-value="load" />
-          <UiFilterDropdown v-model="typeFilter" :options="typeOptions" :all-label="locale === 'ar' ? 'كل الأنواع' : 'All Types'" @update:model-value="load" />
+          <UiSearchInput v-model="searchInput" class="flex-1 min-w-[200px]" />
+          <UiFilterDropdown v-model="statusFilter" :options="statusOptions" :all-label="$t('common.all')" />
+          <UiFilterDropdown v-model="typeFilter" :options="typeOptions" :all-label="locale === 'ar' ? 'كل الأنواع' : 'All Types'" />
         </template>
 
         <template #cell-invoice_number="{ value }">
@@ -63,15 +63,33 @@
 </template>
 
 <script setup lang="ts">
+import type { InvoiceListParams } from '~/features/invoices/services/invoiceService'
+
 definePageMeta({ layout: false })
 
 const { locale } = useI18n()
-const { invoices, loading, meta, fetchInvoices } = useInvoices()
 
-const search = ref('')
+const searchInput = ref('')
+const search = refDebounced(searchInput, 400)
 const statusFilter = ref('')
 const typeFilter = ref('')
 const page = ref(1)
+
+watch([search, statusFilter, typeFilter], () => { page.value = 1 })
+
+const params = computed<InvoiceListParams>(() => ({
+  search: search.value || undefined,
+  status: statusFilter.value || undefined,
+  type: typeFilter.value || undefined,
+  page: page.value,
+}))
+
+const { data, loading } = useInvoicesList(params)
+
+const rows = computed(() => data.value?.data ?? [])
+const total = computed(() => data.value?.meta.total ?? 0)
+const currentPage = computed(() => data.value?.meta.current_page ?? 1)
+const lastPage = computed(() => data.value?.meta.last_page ?? 1)
 
 const columns = computed(() => [
   { key: 'invoice_number', label: locale.value === 'ar' ? 'رقم الفاتورة' : 'Invoice #' },
@@ -97,17 +115,6 @@ const typeOptions = computed(() => [
   { value: 'credit_note', label: locale.value === 'ar' ? 'إشعار دائن' : 'Credit Note' },
 ])
 
-function load() {
-  fetchInvoices({
-    search: search.value,
-    status: statusFilter.value || undefined,
-    type: typeFilter.value || undefined,
-    page: page.value,
-  })
-}
-
-const debouncedLoad = useDebounceFn(() => { page.value = 1; load() }, 400)
-
 function statusColor(s: string) {
   return ({ draft: 'gray', sent: 'blue', paid: 'green', partially_paid: 'orange', overdue: 'red', cancelled: 'gray' } as Record<string, string>)[s] || 'gray'
 }
@@ -122,6 +129,4 @@ function statusLabel(s: string) {
   }
   return s.replace('_', ' ')
 }
-
-onMounted(load)
 </script>

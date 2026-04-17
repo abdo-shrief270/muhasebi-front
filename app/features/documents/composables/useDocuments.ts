@@ -1,9 +1,44 @@
 import type { Document } from '~/shared/types/document'
-import type { PaginatedResponse } from '~/shared/types/client'
+import { documentService, type DocumentListParams } from '~/features/documents/services/documentService'
+import { invalidateQuery, useMutation, useQuery } from '~/core/api/query'
+import { generateRequestId } from '~/core/api/requestId'
 
+export function useDocumentsList(params: Ref<DocumentListParams> | ComputedRef<DocumentListParams>) {
+  const svc = documentService()
+  return useQuery(() => svc.list(unref(params)), {
+    key: () => `documents:list:${JSON.stringify(unref(params))}`,
+    staleMs: 20_000,
+  })
+}
+
+export function useDocumentMutations() {
+  const svc = documentService()
+  const bust = () => invalidateQuery(/^documents:/)
+
+  return {
+    upload: useMutation(async ({ file, data }: { file: File; data?: Record<string, unknown> }) => {
+      const r = await svc.upload(file, data, generateRequestId())
+      bust()
+      return r
+    }),
+    archive: useMutation(async (id: number) => {
+      await svc.archive(id)
+      bust()
+    }),
+    unarchive: useMutation(async (id: number) => {
+      await svc.unarchive(id)
+      bust()
+    }),
+    remove: useMutation(async (id: number) => {
+      await svc.remove(id)
+      bust()
+    }),
+  }
+}
+
+/** Legacy shim. */
 export function useDocuments() {
-  const api = useApi()
-  const config = useRuntimeConfig()
+  const svc = documentService()
   const documents = ref<Document[]>([])
   const loading = ref(false)
   const meta = ref({ current_page: 1, last_page: 1, total: 0 })
@@ -11,50 +46,27 @@ export function useDocuments() {
   async function fetchDocuments(params: Record<string, any> = {}) {
     loading.value = true
     try {
-      const query = new URLSearchParams()
-      Object.entries(params).forEach(([k, v]) => { if (v !== '' && v != null) query.set(k, String(v)) })
-      const data = await api.get<PaginatedResponse<Document>>(`/documents?${query}`)
+      const data = await svc.list(params as DocumentListParams)
       documents.value = data.data
-      meta.value = { current_page: data.meta.current_page, last_page: data.meta.last_page, total: data.meta.total }
-    } catch { documents.value = [] }
-    finally { loading.value = false }
+      meta.value = {
+        current_page: data.meta.current_page,
+        last_page: data.meta.last_page,
+        total: data.meta.total,
+      }
+    } catch {
+      documents.value = []
+    } finally {
+      loading.value = false
+    }
   }
 
-  async function uploadDocument(file: File, data: Record<string, any> = {}): Promise<Document> {
-    const formData = new FormData()
-    formData.append('file', file)
-    Object.entries(data).forEach(([k, v]) => { if (v) formData.append(k, String(v)) })
-
-    // Use shared headers from useApi to ensure X-Tenant is always included
-    const headers = api.getHeaders()
-    // Remove Accept header — let browser set multipart content-type
-    delete (headers as any)['Content-Type']
-
-    const response = await $fetch<{ data: Document }>(`${config.public.apiBase}/documents`, {
-      method: 'POST',
-      body: formData,
-      headers,
-    })
-    return response.data
+  return {
+    documents, loading, meta,
+    fetchDocuments,
+    uploadDocument:    (file: File, data?: Record<string, any>) => svc.upload(file, data ?? {}, generateRequestId()),
+    downloadUrl:       (id: number) => svc.downloadUrl(id),
+    archiveDocument:   (id: number) => svc.archive(id),
+    unarchiveDocument: (id: number) => svc.unarchive(id),
+    deleteDocument:    (id: number) => svc.remove(id),
   }
-
-  function downloadUrl(id: number): string {
-    const tenantId = useTenantId()
-    const token = import.meta.client ? localStorage.getItem('auth_token') : ''
-    return `${config.public.apiBase}/documents/${id}/download?token=${token}&tenant=${tenantId}`
-  }
-
-  async function archiveDocument(id: number): Promise<void> {
-    await api.post(`/documents/${id}/archive`)
-  }
-
-  async function unarchiveDocument(id: number): Promise<void> {
-    await api.post(`/documents/${id}/unarchive`)
-  }
-
-  async function deleteDocument(id: number): Promise<void> {
-    await api.delete(`/documents/${id}`)
-  }
-
-  return { documents, loading, meta, fetchDocuments, uploadDocument, downloadUrl, archiveDocument, unarchiveDocument, deleteDocument }
 }

@@ -94,5 +94,6 @@ export function useApi() {
     patch:  <T>(url: string, body?: any, opts?: AppFetchOptions) => request<T>('PATCH', url, body, opts),
     delete: <T>(url: string, opts?: AppFetchOptions) => request<T>('DELETE', url, undefined, opts),
     raw: api,
+    getHeaders: buildHeaders,
   }
 }

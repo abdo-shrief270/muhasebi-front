@@ -124,7 +124,7 @@
           </div>
 
           <div class="flex gap-3 pt-4 border-t border-gray-100">
-            <UiAppButton type="submit" variant="primary" :loading="formLoading">
+            <UiAppButton type="submit" variant="primary" :loading="createMutation.loading.value || updateMutation.loading.value">
               {{ editingAccount ? $t('common.save') : $t('common.create') }}
             </UiAppButton>
             <UiAppButton variant="outline" @click="formOpen = false">{{ $t('common.cancel') }}</UiAppButton>
@@ -138,17 +138,21 @@
 
 <script setup lang="ts">
 import type { Account } from '~/shared/types/accounting'
+import type { ApiError } from '~/core/api/errors'
 
 definePageMeta({ layout: false })
 
 const { locale } = useI18n()
-const { tree, loading, fetchTree, createAccount, updateAccount } = useAccounts()
 const toastStore = useToastStore()
+
+const { data: treeData, loading, refresh: refreshTree } = useAccountsTree()
+const { create: createMutation, update: updateMutation } = useAccountMutations()
+
+const tree = computed(() => treeData.value ?? [])
 
 const search = ref('')
 const selectedAccount = ref<Account | null>(null)
 const formOpen = ref(false)
-const formLoading = ref(false)
 const editingAccount = ref<Account | null>(null)
 
 const form = reactive({
@@ -162,9 +166,9 @@ const form = reactive({
 })
 
 const filteredTree = computed(() => {
-  if (!search.value) return tree.value
+  if (!search.value) return tree.value ?? []
   const term = search.value.toLowerCase()
-  return filterTree(tree.value, term)
+  return filterTree(tree.value ?? [], term)
 })
 
 function filterTree(nodes: Account[], term: string): Account[] {
@@ -188,7 +192,7 @@ const flatAccounts = computed(() => {
       if (n.children) walk(n.children)
     }
   }
-  walk(tree.value)
+  walk(tree.value ?? [])
   return flat
 })
 
@@ -213,25 +217,21 @@ function openEdit(acc: Account) {
 }
 
 async function handleSubmit() {
-  formLoading.value = true
   try {
     if (editingAccount.value) {
-      await updateAccount(editingAccount.value.id, { ...form })
+      await updateMutation.mutate({ id: editingAccount.value.id, form: { ...form } })
       toastStore.success(locale.value === 'ar' ? 'تم تحديث الحساب' : 'Account updated')
     } else {
-      await createAccount({ ...form })
+      await createMutation.mutate({ ...form })
       toastStore.success(locale.value === 'ar' ? 'تم إنشاء الحساب' : 'Account created')
     }
     formOpen.value = false
-    fetchTree()
-  } catch (e: any) {
-    toastStore.error(e.data?.message || 'Error')
-  } finally {
-    formLoading.value = false
+    refreshTree()
+  } catch (e) {
+    const err = e as ApiError
+    toastStore.error(err.message || 'Error')
   }
 }
-
-onMounted(fetchTree)
 </script>
 
 <style scoped>

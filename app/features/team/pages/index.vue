@@ -60,22 +60,38 @@
         <form @submit.prevent="handleInvite" class="space-y-4">
           <div>
             <label class="form-label">{{ $t('auth.fullName') }} *</label>
-            <input v-model="inviteForm.name" type="text" required class="input-field" />
+            <input
+              v-model="invite.values.name"
+              type="text"
+              class="input-field"
+              :class="{ 'input-error': invite.errors.value.name }"
+              @input="invite.clearError('name')"
+            />
+            <p v-if="invite.errors.value.name" class="form-error">{{ invite.errors.value.name }}</p>
           </div>
           <div>
             <label class="form-label">{{ $t('auth.email') }} *</label>
-            <input v-model="inviteForm.email" type="email" required class="input-field" dir="ltr" />
+            <input
+              v-model="invite.values.email"
+              type="email"
+              class="input-field"
+              :class="{ 'input-error': invite.errors.value.email }"
+              dir="ltr"
+              @input="invite.clearError('email')"
+            />
+            <p v-if="invite.errors.value.email" class="form-error">{{ invite.errors.value.email }}</p>
           </div>
           <div>
             <label class="form-label">{{ locale === 'ar' ? 'الدور' : 'Role' }}</label>
-            <select v-model="inviteForm.role" class="input-field">
+            <select v-model="invite.values.role" class="input-field">
               <option value="accountant">{{ locale === 'ar' ? 'محاسب' : 'Accountant' }}</option>
               <option value="auditor">{{ locale === 'ar' ? 'مراجع' : 'Auditor' }}</option>
               <option value="admin">{{ locale === 'ar' ? 'مدير' : 'Admin' }}</option>
             </select>
+            <p v-if="invite.errors.value.role" class="form-error">{{ invite.errors.value.role }}</p>
           </div>
           <div class="flex gap-3 pt-4 border-t border-gray-100">
-            <UiAppButton type="submit" variant="primary" :loading="inviteLoading">{{ locale === 'ar' ? 'إرسال الدعوة' : 'Send Invite' }}</UiAppButton>
+            <UiAppButton type="submit" variant="primary" :loading="invite.submitting.value">{{ locale === 'ar' ? 'إرسال الدعوة' : 'Send Invite' }}</UiAppButton>
             <UiAppButton variant="outline" @click="inviteOpen = false">{{ $t('common.cancel') }}</UiAppButton>
           </div>
         </form>
@@ -86,6 +102,9 @@
 </template>
 
 <script setup lang="ts">
+import { teamInviteDefaults, teamInviteSchema, type TeamInviteInput } from '~/features/team/schemas'
+import type { ApiError } from '~/core/api/errors'
+
 definePageMeta({ layout: false })
 const { locale } = useI18n()
 const api = useApi()
@@ -95,8 +114,11 @@ const members = ref<any[]>([])
 const availableRoles = ref<any[]>([])
 const loading = ref(true)
 const inviteOpen = ref(false)
-const inviteLoading = ref(false)
-const inviteForm = reactive({ name: '', email: '', role: 'accountant' })
+
+const invite = useZodForm<TeamInviteInput>({
+  schema: teamInviteSchema,
+  initial: { ...teamInviteDefaults },
+})
 
 async function load() {
   loading.value = true
@@ -120,15 +142,19 @@ async function handleRoleChange(member: any, newRole: string) {
 }
 
 async function handleInvite() {
-  inviteLoading.value = true
-  try {
-    await api.post('/team/invite', inviteForm)
+  const result = await invite.handleSubmit(async (data) => {
+    await api.post('/team/invite', data)
+  })
+  if (result.ok) {
     toastStore.success(locale.value === 'ar' ? 'تم إرسال الدعوة' : 'Invite sent')
     inviteOpen.value = false
-    inviteForm.name = ''; inviteForm.email = ''; inviteForm.role = 'accountant'
+    invite.reset()
     load()
-  } catch (e: any) { toastStore.error(e.data?.message || 'Error') }
-  finally { inviteLoading.value = false }
+  } else if ('error' in result && result.error) {
+    const err = result.error as ApiError
+    invite.applyApiErrors(err)
+    toastStore.error(err.message || 'Error')
+  }
 }
 
 async function handleToggle(member: any) {
@@ -156,5 +182,7 @@ onMounted(load)
 
 <style scoped>
 .input-field { @apply w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all text-sm bg-gray-50/50; }
+.input-error { @apply border-red-300 focus:ring-red-500/20 focus:border-red-500; }
 .form-label { @apply block text-sm font-medium text-gray-600 mb-1; }
+.form-error { @apply mt-1 text-xs text-red-500; }
 </style>

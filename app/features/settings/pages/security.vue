@@ -66,21 +66,73 @@
         </div>
       </div>
 
-      <!-- Password Info -->
+      <!-- Change Password -->
       <div class="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 class="font-semibold text-gray-800 mb-2">{{ locale === 'ar' ? 'أمان كلمة المرور' : 'Password Security' }}</h3>
-        <ul class="space-y-2 text-sm text-gray-500">
-          <li class="flex items-center gap-2"><span class="text-emerald-500">✓</span> {{ locale === 'ar' ? '8 أحرف على الأقل' : 'At least 8 characters' }}</li>
-          <li class="flex items-center gap-2"><span class="text-emerald-500">✓</span> {{ locale === 'ar' ? 'حرف كبير وصغير' : 'Upper and lowercase letters' }}</li>
-          <li class="flex items-center gap-2"><span class="text-emerald-500">✓</span> {{ locale === 'ar' ? 'رقم واحد على الأقل' : 'At least one number' }}</li>
-          <li class="flex items-center gap-2"><span class="text-emerald-500">✓</span> {{ locale === 'ar' ? 'يتم فحصها ضد تسريبات البيانات' : 'Checked against known data breaches' }}</li>
-        </ul>
+        <h3 class="font-semibold text-gray-800 mb-2">{{ locale === 'ar' ? 'تغيير كلمة المرور' : 'Change Password' }}</h3>
+        <p class="text-xs text-gray-400 mb-4">
+          {{ locale === 'ar' ? 'استخدم كلمة مرور قوية لم تستخدمها في أي موقع آخر.' : 'Use a strong password you do not use anywhere else.' }}
+        </p>
+
+        <form @submit.prevent="changePassword" class="space-y-4">
+          <div>
+            <label class="form-label">{{ locale === 'ar' ? 'كلمة المرور الحالية' : 'Current Password' }} *</label>
+            <input
+              v-model="password.values.current_password"
+              type="password"
+              autocomplete="current-password"
+              class="input-field"
+              :class="{ 'input-error': password.errors.value.current_password }"
+              dir="ltr"
+              @input="password.clearError('current_password')"
+            />
+            <p v-if="password.errors.value.current_password" class="form-error">{{ password.errors.value.current_password }}</p>
+          </div>
+          <div>
+            <label class="form-label">{{ locale === 'ar' ? 'كلمة المرور الجديدة' : 'New Password' }} *</label>
+            <input
+              v-model="password.values.password"
+              type="password"
+              autocomplete="new-password"
+              class="input-field"
+              :class="{ 'input-error': password.errors.value.password }"
+              dir="ltr"
+              @input="password.clearError('password')"
+            />
+            <p v-if="password.errors.value.password" class="form-error">{{ password.errors.value.password }}</p>
+          </div>
+          <div>
+            <label class="form-label">{{ locale === 'ar' ? 'تأكيد كلمة المرور' : 'Confirm Password' }} *</label>
+            <input
+              v-model="password.values.password_confirmation"
+              type="password"
+              autocomplete="new-password"
+              class="input-field"
+              :class="{ 'input-error': password.errors.value.password_confirmation }"
+              dir="ltr"
+              @input="password.clearError('password_confirmation')"
+            />
+            <p v-if="password.errors.value.password_confirmation" class="form-error">{{ password.errors.value.password_confirmation }}</p>
+          </div>
+
+          <ul class="space-y-1.5 text-xs text-gray-400 pt-2">
+            <li>• {{ locale === 'ar' ? '8 أحرف على الأقل' : 'At least 8 characters' }}</li>
+            <li>• {{ locale === 'ar' ? 'حرف كبير وصغير ورقم' : 'Upper, lowercase, and a digit' }}</li>
+            <li>• {{ locale === 'ar' ? 'مختلفة عن كلمة المرور الحالية' : 'Different from current password' }}</li>
+          </ul>
+
+          <UiAppButton type="submit" variant="primary" :loading="password.submitting.value">
+            {{ locale === 'ar' ? 'تحديث كلمة المرور' : 'Update Password' }}
+          </UiAppButton>
+        </form>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { passwordChangeDefaults, passwordChangeSchema, type PasswordChangeInput } from '~/features/settings/schemas'
+import type { ApiError } from '~/core/api/errors'
+
 definePageMeta({  })
 const { locale } = useI18n()
 const api = useApi()
@@ -92,6 +144,25 @@ const qrImageUrl = ref('')
 const enabling = ref(false)
 const disabling = ref(false)
 const disablePassword = ref('')
+
+const password = useZodForm<PasswordChangeInput>({
+  schema: passwordChangeSchema,
+  initial: { ...passwordChangeDefaults },
+})
+
+async function changePassword() {
+  const result = await password.handleSubmit(async (data) => {
+    await api.put('/settings/security/password', data)
+  })
+  if (result.ok) {
+    toastStore.success(locale.value === 'ar' ? 'تم تحديث كلمة المرور' : 'Password updated')
+    password.reset()
+  } else if ('error' in result && result.error) {
+    const err = result.error as ApiError
+    password.applyApiErrors(err)
+    toastStore.error(err.message || 'Error')
+  }
+}
 
 async function checkStatus() {
   try {
@@ -127,3 +198,10 @@ async function disable2fa() {
 
 onMounted(checkStatus)
 </script>
+
+<style scoped>
+.input-field { @apply w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all text-sm bg-gray-50/50; }
+.input-error { @apply border-red-300 focus:ring-red-500/20 focus:border-red-500; }
+.form-label { @apply block text-sm font-medium text-gray-600 mb-1; }
+.form-error { @apply mt-1 text-xs text-red-500; }
+</style>

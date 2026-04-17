@@ -2,7 +2,7 @@
   <div>
     <NuxtLayout name="dashboard">
       <FeatureBoundary id="documents">
-      <UiPageHeader :title="$t('nav.documents')" :subtitle="locale === 'ar' ? `${meta.total} مستند` : `${meta.total} documents`">
+      <UiPageHeader :title="$t('nav.documents')" :subtitle="locale === 'ar' ? `${total} مستند` : `${total} documents`">
         <template #actions>
           <UiAppButton variant="primary" @click="uploadOpen = true">
             {{ locale === 'ar' ? '+ رفع مستند' : '+ Upload' }}
@@ -12,16 +12,16 @@
 
       <UiDataTable
         :columns="columns"
-        :rows="documents"
+        :rows="rows"
         :loading="loading"
-        :current-page="meta.current_page"
-        :total-pages="meta.last_page"
+        :current-page="currentPage"
+        :total-pages="lastPage"
         :empty-title="locale === 'ar' ? 'لا توجد مستندات' : 'No documents'"
-        @page-change="(p) => { page = p; load() }"
+        @page-change="(p: number) => { page = p }"
       >
         <template #header>
-          <UiSearchInput v-model="search" class="flex-1 min-w-[200px]" @update:model-value="debouncedLoad" />
-          <UiFilterDropdown v-model="categoryFilter" :options="categoryOptions" :all-label="locale === 'ar' ? 'كل الأنواع' : 'All Categories'" @update:model-value="load" />
+          <UiSearchInput v-model="searchInput" class="flex-1 min-w-[200px]" />
+          <UiFilterDropdown v-model="categoryFilter" :options="categoryOptions" :all-label="locale === 'ar' ? 'كل الأنواع' : 'All Categories'" />
         </template>
 
         <template #cell-name="{ row }">
@@ -94,7 +94,7 @@
           </TransitionGroup>
 
           <div v-if="uploadedFiles.length > 0" class="pt-4">
-            <UiAppButton variant="primary" @click="uploadOpen = false; load()">
+            <UiAppButton variant="primary" @click="uploadOpen = false; refresh()">
               {{ $t('common.close') }}
             </UiAppButton>
           </div>
@@ -118,18 +118,40 @@
 
 <script setup lang="ts">
 import type { Document } from '~/shared/types/document'
+import { documentService, type DocumentListParams } from '~/features/documents/services/documentService'
+import type { ApiError } from '~/core/api/errors'
 
 definePageMeta({ layout: false })
 
 const { locale } = useI18n()
-const { documents, loading, meta, fetchDocuments, uploadDocument, downloadUrl, archiveDocument, unarchiveDocument, deleteDocument } = useDocuments()
 const toastStore = useToastStore()
 
-const search = ref('')
+const searchInput = ref('')
+const search = refDebounced(searchInput, 400)
 const categoryFilter = ref('')
 const page = ref(1)
+
+watch([search, categoryFilter], () => { page.value = 1 })
+
+const params = computed<DocumentListParams>(() => ({
+  search: search.value || undefined,
+  category: categoryFilter.value || undefined,
+  page: page.value,
+}))
+
+const { data, loading, refresh } = useDocumentsList(params)
+const { upload: uploadMutation, archive: archiveMutation, unarchive: unarchiveMutation, remove: removeMutation } = useDocumentMutations()
+
+const rows = computed(() => data.value?.data ?? [])
+const total = computed(() => data.value?.meta.total ?? 0)
+const currentPage = computed(() => data.value?.meta.current_page ?? 1)
+const lastPage = computed(() => data.value?.meta.last_page ?? 1)
+
+const svc = documentService()
+const downloadUrl = (id: number) => svc.downloadUrl(id)
+
 const uploadOpen = ref(false)
-const uploading = ref(false)
+const uploading = computed(() => uploadMutation.loading.value)
 const uploadedFiles = ref<string[]>([])
 const deleteConfirmOpen = ref(false)
 const deletingDoc = ref<Document | null>(null)
@@ -151,37 +173,32 @@ const categoryOptions = computed(() => [
   { value: 'other', label: locale.value === 'ar' ? 'أخرى' : 'Other' },
 ])
 
-function load() {
-  fetchDocuments({ search: search.value, category: categoryFilter.value || undefined, page: page.value })
-}
-
-const debouncedLoad = useDebounceFn(() => { page.value = 1; load() }, 400)
-
 async function handleUpload(files: File[]) {
-  uploading.value = true
   for (const file of files) {
     try {
-      await uploadDocument(file, { category: categoryFilter.value || undefined })
+      await uploadMutation.mutate({ file, data: { category: categoryFilter.value || undefined } })
       uploadedFiles.value.push(file.name)
       toastStore.success(`${file.name} ${locale.value === 'ar' ? 'تم الرفع' : 'uploaded'}`)
-    } catch (e: any) {
-      toastStore.error(`${file.name}: ${e.data?.message || 'Upload failed'}`)
+    } catch (e) {
+      const err = e as ApiError
+      toastStore.error(`${file.name}: ${err.message || 'Upload failed'}`)
     }
   }
-  uploading.value = false
 }
 
 async function handleArchive(doc: Document) {
   try {
     if (doc.is_archived) {
-      await unarchiveDocument(doc.id)
+      await unarchiveMutation.mutate(doc.id)
       toastStore.success(locale.value === 'ar' ? 'تم الاستعادة' : 'Unarchived')
     } else {
-      await archiveDocument(doc.id)
+      await archiveMutation.mutate(doc.id)
       toastStore.success(locale.value === 'ar' ? 'تم الأرشفة' : 'Archived')
     }
-    load()
-  } catch (e: any) { toastStore.error(e.data?.message || 'Error') }
+  } catch (e) {
+    const err = e as ApiError
+    toastStore.error(err.message || 'Error')
+  }
 }
 
 function confirmDelete(doc: Document) {
@@ -192,10 +209,12 @@ function confirmDelete(doc: Document) {
 async function handleDelete() {
   if (!deletingDoc.value) return
   try {
-    await deleteDocument(deletingDoc.value.id)
+    await removeMutation.mutate(deletingDoc.value.id)
     toastStore.success(locale.value === 'ar' ? 'تم الحذف' : 'Deleted')
-    load()
-  } catch (e: any) { toastStore.error(e.data?.message || 'Error') }
+  } catch (e) {
+    const err = e as ApiError
+    toastStore.error(err.message || 'Error')
+  }
   deleteConfirmOpen.value = false
 }
 
@@ -221,5 +240,4 @@ function mimeColor(mime: string) {
   return 'bg-gray-50 text-gray-400'
 }
 
-onMounted(load)
 </script>

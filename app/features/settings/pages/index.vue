@@ -1,6 +1,7 @@
 <template>
   <div>
     <NuxtLayout name="dashboard">
+      <FeatureBoundary id="settings">
       <UiPageHeader
         :title="$t('nav.settings')"
         :subtitle="locale === 'ar' ? 'إعدادات الحساب والتفضيلات' : 'Account settings and preferences'"
@@ -137,6 +138,7 @@
           </UiAppButton>
         </div>
       </div>
+      </FeatureBoundary>
     </NuxtLayout>
   </div>
 </template>

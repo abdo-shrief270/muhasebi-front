@@ -1,6 +1,7 @@
 <template>
   <div>
     <NuxtLayout name="dashboard">
+      <FeatureBoundary id="reports">
       <UiPageHeader :title="locale === 'ar' ? 'كشف حساب العميل' : 'Client Statement'">
         <template #actions>
           <select v-model="clientId" class="px-4 py-2 border border-gray-200 rounded-xl text-sm bg-white outline-none" @change="load">
@@ -58,6 +59,7 @@
       <div v-else-if="!loading && clientId" class="bg-white rounded-2xl border border-gray-100/80 p-8">
         <UiEmptyState icon="📋" :title="locale === 'ar' ? 'لا توجد بيانات' : 'No data'" />
       </div>
+      </FeatureBoundary>
     </NuxtLayout>
   </div>
 </template>

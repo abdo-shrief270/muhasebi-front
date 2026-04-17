@@ -1,6 +1,7 @@
 <template>
   <div>
     <NuxtLayout name="dashboard">
+      <FeatureBoundary id="team">
       <UiPageHeader :title="$t('nav.team')">
         <template #actions>
           <UiAppButton variant="primary" @click="inviteOpen = true">
@@ -79,6 +80,7 @@
           </div>
         </form>
       </UiSlideOver>
+      </FeatureBoundary>
     </NuxtLayout>
   </div>
 </template>

@@ -1,6 +1,7 @@
 <template>
   <div>
     <NuxtLayout name="dashboard">
+      <FeatureBoundary id="journal-entries">
       <UiPageHeader :title="$t('nav.journalEntries')" :subtitle="locale === 'ar' ? `${meta.total} قيد` : `${meta.total} entries`">
         <template #actions>
           <UiAppButton variant="primary" @click="navigateTo('/journal-entries/create')">
@@ -45,6 +46,7 @@
           </UiBadge>
         </template>
       </UiDataTable>
+      </FeatureBoundary>
     </NuxtLayout>
   </div>
 </template>

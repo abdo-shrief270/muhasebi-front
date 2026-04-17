@@ -1,6 +1,7 @@
 <template>
   <div>
     <NuxtLayout name="dashboard">
+      <FeatureBoundary id="onboarding">
       <div class="max-w-3xl mx-auto">
         <UiPageHeader
           :title="locale === 'ar' ? 'إعداد الحساب' : 'Account Setup'"
@@ -205,6 +206,7 @@
           </div>
         </Transition>
       </div>
+      </FeatureBoundary>
     </NuxtLayout>
   </div>
 </template>

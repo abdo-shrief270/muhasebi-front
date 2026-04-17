@@ -1,6 +1,7 @@
 <template>
   <div>
     <NuxtLayout name="dashboard">
+      <FeatureBoundary id="eta">
       <UiPageHeader :title="locale === 'ar' ? 'مطابقة المستندات' : 'ETA Reconciliation'">
         <template #actions>
           <UiAppButton variant="primary" :loading="running" @click="runReconcile">
@@ -66,6 +67,7 @@
           </table>
         </div>
       </div>
+      </FeatureBoundary>
     </NuxtLayout>
   </div>
 </template>

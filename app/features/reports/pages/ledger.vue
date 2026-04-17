@@ -1,6 +1,7 @@
 <template>
   <div>
     <NuxtLayout name="dashboard">
+      <FeatureBoundary id="reports">
       <UiPageHeader :title="locale === 'ar' ? 'دفتر الأستاذ' : 'Account Ledger'" :subtitle="accountName">
         <template #actions>
           <UiDateRangePicker v-model:from="dateFrom" v-model:to="dateTo" />
@@ -57,6 +58,7 @@
           <UiEmptyState icon="&#9679;" :title="locale === 'ar' ? 'لا توجد حركات' : 'No transactions'" />
         </div>
       </div>
+      </FeatureBoundary>
     </NuxtLayout>
   </div>
 </template>

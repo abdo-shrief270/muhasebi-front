@@ -1,6 +1,7 @@
 <template>
   <div>
     <NuxtLayout name="dashboard">
+      <FeatureBoundary id="accounts">
       <UiPageHeader :title="locale === 'ar' ? 'السنوات المالية' : 'Fiscal Years'">
         <template #actions>
           <UiAppButton variant="primary" @click="createOpen = true">{{ locale === 'ar' ? '+ سنة مالية' : '+ New Year' }}</UiAppButton>
@@ -69,6 +70,7 @@
           </div>
         </form>
       </UiSlideOver>
+      </FeatureBoundary>
     </NuxtLayout>
   </div>
 </template>

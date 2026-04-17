@@ -1,6 +1,7 @@
 <template>
   <div>
     <NuxtLayout name="dashboard">
+      <FeatureBoundary id="payroll">
       <UiPageHeader :title="$t('nav.payroll')">
         <template #actions>
           <UiAppButton variant="outline" size="sm" @click="navigateTo('/payroll/employees')">
@@ -69,6 +70,7 @@
           </div>
         </form>
       </UiSlideOver>
+      </FeatureBoundary>
     </NuxtLayout>
   </div>
 </template>

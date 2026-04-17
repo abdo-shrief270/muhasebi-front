@@ -1,6 +1,7 @@
 <template>
   <div>
     <NuxtLayout name="dashboard">
+      <FeatureBoundary id="documents">
       <UiPageHeader :title="$t('nav.documents')" :subtitle="locale === 'ar' ? `${meta.total} مستند` : `${meta.total} documents`">
         <template #actions>
           <UiAppButton variant="primary" @click="uploadOpen = true">
@@ -110,6 +111,7 @@
         :confirm-label="$t('common.delete')"
         @confirm="handleDelete"
       />
+      </FeatureBoundary>
     </NuxtLayout>
   </div>
 </template>

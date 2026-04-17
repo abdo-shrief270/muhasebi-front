@@ -1,6 +1,7 @@
 <template>
   <div>
     <NuxtLayout name="dashboard">
+      <FeatureBoundary id="accounts">
       <UiPageHeader :title="$t('nav.accounts')">
         <template #actions>
           <UiAppButton variant="primary" @click="openCreate">
@@ -130,6 +131,7 @@
           </div>
         </form>
       </UiSlideOver>
+      </FeatureBoundary>
     </NuxtLayout>
   </div>
 </template>

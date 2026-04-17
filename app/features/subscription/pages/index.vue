@@ -1,6 +1,7 @@
 <template>
   <div>
     <NuxtLayout name="dashboard">
+      <FeatureBoundary id="subscription">
       <UiPageHeader :title="$t('nav.subscription')" :subtitle="locale === 'ar' ? 'إدارة اشتراكك وباقتك' : 'Manage your subscription and plan'" />
 
       <div
@@ -89,6 +90,7 @@
           </p>
         </div>
       </div>
+      </FeatureBoundary>
     </NuxtLayout>
   </div>
 </template>

@@ -1,6 +1,7 @@
 <template>
   <div>
     <NuxtLayout name="dashboard">
+      <FeatureBoundary id="eta">
       <UiPageHeader :title="locale === 'ar' ? 'أكواد الأصناف' : 'Item Codes'">
         <template #actions>
           <UiAppButton variant="primary" @click="openCreate">
@@ -90,6 +91,7 @@
           </div>
         </form>
       </UiSlideOver>
+      </FeatureBoundary>
     </NuxtLayout>
   </div>
 </template>

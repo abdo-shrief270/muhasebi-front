@@ -1,6 +1,7 @@
 <template>
   <div>
     <NuxtLayout name="dashboard">
+      <FeatureBoundary id="eta">
       <UiPageHeader :title="locale === 'ar' ? 'مستندات الفوترة الإلكترونية' : 'E-Invoice Documents'" />
 
       <UiDataTable
@@ -44,6 +45,7 @@
           </div>
         </template>
       </UiDataTable>
+      </FeatureBoundary>
     </NuxtLayout>
   </div>
 </template>

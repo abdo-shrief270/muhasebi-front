@@ -1,6 +1,7 @@
 <template>
   <div>
     <NuxtLayout name="dashboard">
+      <FeatureBoundary id="invoices">
       <UiPageHeader :title="$t('nav.invoices')" :subtitle="locale === 'ar' ? `${meta.total} فاتورة` : `${meta.total} invoices`">
         <template #actions>
           <UiAppButton variant="primary" @click="navigateTo('/invoices/create')">
@@ -56,6 +57,7 @@
           <span v-else class="text-gray-300 text-xs">-</span>
         </template>
       </UiDataTable>
+      </FeatureBoundary>
     </NuxtLayout>
   </div>
 </template>

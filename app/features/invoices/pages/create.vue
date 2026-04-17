@@ -1,6 +1,7 @@
 <template>
   <div>
     <NuxtLayout name="dashboard">
+      <FeatureBoundary id="invoices">
       <UiPageHeader :title="locale === 'ar' ? 'فاتورة جديدة' : 'New Invoice'" />
 
       <div
@@ -123,6 +124,7 @@
           </div>
         </form>
       </div>
+      </FeatureBoundary>
     </NuxtLayout>
   </div>
 </template>

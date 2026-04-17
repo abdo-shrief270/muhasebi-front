@@ -1,6 +1,7 @@
 <template>
   <div>
     <NuxtLayout name="dashboard">
+      <FeatureBoundary id="reports">
       <UiPageHeader :title="locale === 'ar' ? 'ميزان المراجعة' : 'Trial Balance'">
         <template #actions>
           <UiDateRangePicker v-model:from="dateFrom" v-model:to="dateTo" />
@@ -75,6 +76,7 @@
           {{ isBalanced ? (locale === 'ar' ? 'ميزان متوازن' : 'Balanced') : (locale === 'ar' ? 'غير متوازن' : 'Not balanced') }}
         </UiBadge>
       </div>
+      </FeatureBoundary>
     </NuxtLayout>
   </div>
 </template>

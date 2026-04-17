@@ -1,6 +1,7 @@
 <template>
   <div>
     <NuxtLayout name="dashboard">
+      <FeatureBoundary id="reports">
       <UiPageHeader :title="locale === 'ar' ? 'تقرير أعمار الديون' : 'Aging Report'" />
 
       <div v-if="loading"><UiLoadingSkeleton :lines="8" :height="24" /></div>
@@ -46,6 +47,7 @@
       <div v-else class="bg-white rounded-2xl border border-gray-100/80 p-8">
         <UiEmptyState icon="📊" :title="locale === 'ar' ? 'لا توجد بيانات' : 'No data'" />
       </div>
+      </FeatureBoundary>
     </NuxtLayout>
   </div>
 </template>

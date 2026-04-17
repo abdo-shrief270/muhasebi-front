@@ -1,6 +1,7 @@
 <template>
   <div>
     <NuxtLayout name="dashboard">
+      <FeatureBoundary id="settings">
       <UiPageHeader
         :title="locale === 'ar' ? '\u0625\u0639\u062F\u0627\u062F\u0627\u062A \u0627\u0644\u0625\u0634\u0639\u0627\u0631\u0627\u062A' : 'Notification Preferences'"
         :subtitle="locale === 'ar' ? '\u062A\u062D\u0643\u0645 \u0641\u064A \u0637\u0631\u064A\u0642\u0629 \u0648\u0635\u0648\u0644 \u0627\u0644\u0625\u0634\u0639\u0627\u0631\u0627\u062A \u0625\u0644\u064A\u0643' : 'Control how you receive notifications'"
@@ -84,6 +85,7 @@
           {{ locale === 'ar' ? '\u064A\u062A\u0645 \u062D\u0641\u0638 \u0627\u0644\u062A\u063A\u064A\u064A\u0631\u0627\u062A \u062A\u0644\u0642\u0627\u0626\u064A\u064B\u0627' : 'Changes are saved automatically' }}
         </p>
       </div>
+      </FeatureBoundary>
     </NuxtLayout>
   </div>
 </template>

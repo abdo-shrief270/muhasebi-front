@@ -1,6 +1,7 @@
 <template>
   <div>
     <NuxtLayout name="dashboard">
+      <FeatureBoundary id="eta">
       <template v-if="loading"><UiLoadingSkeleton :lines="8" :height="24" /></template>
 
       <template v-else-if="doc">
@@ -91,6 +92,7 @@
           @confirm="handleCancel"
         />
       </template>
+      </FeatureBoundary>
     </NuxtLayout>
   </div>
 </template>

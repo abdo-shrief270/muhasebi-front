@@ -1,6 +1,7 @@
 <template>
   <div>
     <NuxtLayout name="dashboard">
+      <FeatureBoundary id="eta">
       <UiPageHeader :title="$t('nav.eta')" :subtitle="locale === 'ar' ? 'إدارة الفوترة الإلكترونية - مصلحة الضرائب' : 'Egyptian Tax Authority E-Invoicing'" />
 
       <!-- Quick stats -->
@@ -50,6 +51,7 @@
           <UiEmptyState icon="&#11041;" :title="locale === 'ar' ? 'لا توجد مستندات' : 'No documents yet'" />
         </div>
       </div>
+      </FeatureBoundary>
     </NuxtLayout>
   </div>
 </template>

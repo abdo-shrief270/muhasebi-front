@@ -1,6 +1,7 @@
 <template>
   <div>
     <NuxtLayout name="dashboard">
+      <FeatureBoundary id="clients">
       <UiPageHeader :title="$t('nav.clients')" :subtitle="locale === 'ar' ? `${meta.total} عميل` : `${meta.total} clients`">
         <template #actions>
           <UiAppButton variant="primary" @click="openCreate">
@@ -79,6 +80,7 @@
           @cancel="formOpen = false"
         />
       </UiSlideOver>
+      </FeatureBoundary>
     </NuxtLayout>
   </div>
 </template>

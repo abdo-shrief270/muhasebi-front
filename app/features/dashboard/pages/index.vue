@@ -1,6 +1,7 @@
 <template>
   <div>
     <NuxtLayout name="dashboard">
+      <FeatureBoundary id="dashboard">
       <UiPageHeader
         :title="$t('nav.dashboard')"
         :subtitle="greeting"
@@ -226,6 +227,7 @@
           </div>
         </template>
       </div>
+      </FeatureBoundary>
     </NuxtLayout>
   </div>
 </template>

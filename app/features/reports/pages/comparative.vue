@@ -1,6 +1,7 @@
 <template>
   <div>
     <NuxtLayout name="dashboard">
+      <FeatureBoundary id="reports">
       <UiPageHeader :title="locale === 'ar' ? 'تقارير مقارنة' : 'Comparative Reports'">
         <template #actions>
           <select v-model="reportType" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white outline-none">
@@ -43,6 +44,7 @@
       <div v-else-if="!loading" class="bg-white rounded-2xl border border-gray-100/80 p-8">
         <UiEmptyState icon="📊" :title="locale === 'ar' ? 'اختر الفترات وانقر مقارنة' : 'Select periods and click Compare'" />
       </div>
+      </FeatureBoundary>
     </NuxtLayout>
   </div>
 </template>

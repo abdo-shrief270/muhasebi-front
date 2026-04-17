@@ -1,6 +1,7 @@
 <template>
   <div>
     <NuxtLayout name="dashboard">
+      <FeatureBoundary id="reports">
       <UiPageHeader :title="$t('nav.reports')" :subtitle="locale === 'ar' ? 'التقارير المالية' : 'Financial Reports'" />
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -20,6 +21,7 @@
           <p class="text-sm text-gray-400">{{ report.description }}</p>
         </NuxtLink>
       </div>
+      </FeatureBoundary>
     </NuxtLayout>
   </div>
 </template>

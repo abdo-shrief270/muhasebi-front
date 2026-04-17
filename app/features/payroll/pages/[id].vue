@@ -1,6 +1,7 @@
 <template>
   <div>
     <NuxtLayout name="dashboard">
+      <FeatureBoundary id="payroll">
       <template v-if="loading"><UiLoadingSkeleton :lines="8" :height="24" /></template>
 
       <template v-else-if="run">
@@ -86,6 +87,7 @@
           <UiEmptyState icon="💰" :title="locale === 'ar' ? 'لم يتم الحساب بعد' : 'Not calculated yet'" :description="locale === 'ar' ? 'اضغط حساب لإنشاء بنود الرواتب' : 'Click Calculate to generate payroll items'" />
         </div>
       </template>
+      </FeatureBoundary>
     </NuxtLayout>
   </div>
 </template>

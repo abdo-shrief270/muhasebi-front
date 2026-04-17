@@ -1,6 +1,7 @@
 <template>
   <div>
     <NuxtLayout name="dashboard">
+      <FeatureBoundary id="timesheets">
       <UiPageHeader :title="locale === 'ar' ? 'ملخص الساعات' : 'Timesheet Summary'">
         <template #actions>
           <UiDateRangePicker v-model:from="dateFrom" v-model:to="dateTo" />
@@ -72,6 +73,7 @@
           </div>
         </div>
       </div>
+      </FeatureBoundary>
     </NuxtLayout>
   </div>
 </template>

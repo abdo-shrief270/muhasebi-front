@@ -1,6 +1,7 @@
 <template>
   <div>
     <NuxtLayout name="dashboard">
+      <FeatureBoundary id="journal-entries">
       <UiPageHeader :title="locale === 'ar' ? 'قيد يومي جديد' : 'New Journal Entry'" />
 
       <div
@@ -128,6 +129,7 @@
           </div>
         </form>
       </div>
+      </FeatureBoundary>
     </NuxtLayout>
   </div>
 </template>

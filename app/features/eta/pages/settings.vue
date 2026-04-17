@@ -1,6 +1,7 @@
 <template>
   <div>
     <NuxtLayout name="dashboard">
+      <FeatureBoundary id="eta">
       <UiPageHeader :title="locale === 'ar' ? 'إعدادات الفوترة الإلكترونية' : 'E-Invoice Settings'" />
 
       <div v-if="loading" class="max-w-2xl"><UiLoadingSkeleton :lines="8" :height="24" /></div>
@@ -84,6 +85,7 @@
 
         <UiAppButton type="submit" variant="primary" :loading="saving">{{ $t('common.save') }}</UiAppButton>
       </form>
+      </FeatureBoundary>
     </NuxtLayout>
   </div>
 </template>

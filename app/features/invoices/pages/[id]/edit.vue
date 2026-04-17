@@ -1,6 +1,7 @@
 <template>
   <div>
     <NuxtLayout name="dashboard">
+      <FeatureBoundary id="invoices">
       <UiPageHeader :title="locale === 'ar' ? 'تعديل الفاتورة' : 'Edit Invoice'" />
 
       <div v-if="loading"><UiLoadingSkeleton :lines="8" :height="24" /></div>
@@ -74,6 +75,7 @@
           </div>
         </form>
       </div>
+      </FeatureBoundary>
     </NuxtLayout>
   </div>
 </template>

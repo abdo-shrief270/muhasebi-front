@@ -1,6 +1,7 @@
 <template>
   <div>
     <NuxtLayout name="dashboard">
+      <FeatureBoundary id="reports">
       <UiPageHeader :title="locale === 'ar' ? 'التدفقات النقدية' : 'Cash Flow Statement'">
         <template #actions>
           <UiDateRangePicker v-model:from="dateFrom" v-model:to="dateTo" />
@@ -39,6 +40,7 @@
 
         <div v-else class="p-8"><UiEmptyState icon="&#8644;" :title="locale === 'ar' ? 'لا توجد بيانات' : 'No data'" /></div>
       </div>
+      </FeatureBoundary>
     </NuxtLayout>
   </div>
 </template>

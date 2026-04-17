@@ -1,6 +1,7 @@
 <template>
   <div>
     <NuxtLayout name="dashboard">
+      <FeatureBoundary id="reports">
       <UiPageHeader :title="locale === 'ar' ? 'الميزانية العمومية' : 'Balance Sheet'">
         <template #actions>
           <div class="flex items-center gap-2">
@@ -71,6 +72,7 @@
 
         <div v-else class="p-8"><UiEmptyState icon="&#9881;" :title="locale === 'ar' ? 'لا توجد بيانات' : 'No data'" /></div>
       </div>
+      </FeatureBoundary>
     </NuxtLayout>
   </div>
 </template>

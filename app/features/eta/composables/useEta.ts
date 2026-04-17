@@ -1,108 +1,95 @@
-export interface EtaSettings {
-  id: number
-  is_enabled: boolean
-  environment: string
-  client_id: string | null
-  has_client_secret: boolean
-  branch_id: string
-  branch_address_governate: string | null
-  branch_address_region_city: string | null
-  branch_address_street: string | null
-  branch_address_building_number: string | null
-  activity_code: string | null
-  company_trade_name: string | null
-  token_valid: boolean
+import { etaService, type EtaDocument, type EtaItemCode, type EtaListParams, type EtaSettings } from '~/features/eta/services/etaService'
+import { invalidateQuery, useMutation, useQuery } from '~/core/api/query'
+import { generateRequestId } from '~/core/api/requestId'
+
+export type { EtaDocument, EtaItemCode, EtaSettings }
+
+export function useEtaSettings() {
+  const svc = etaService()
+  return useQuery(() => svc.getSettings(), {
+    key: 'eta:settings',
+    staleMs: 60_000,
+  })
 }
 
-export interface EtaDocument {
-  id: number
-  invoice_id: number
-  document_type: string
-  internal_id: string
-  eta_uuid: string | null
-  status: string
-  status_label: string
-  status_label_ar: string
-  status_color: string
-  errors: any
-  qr_code_data: string | null
-  submitted_at: string | null
-  created_at: string
-  invoice?: any
+export function useEtaDocumentsList(params: Ref<EtaListParams> | ComputedRef<EtaListParams>) {
+  const svc = etaService()
+  return useQuery(() => svc.listDocuments(unref(params)), {
+    key: () => `eta:docs:${JSON.stringify(unref(params))}`,
+    staleMs: 15_000,
+  })
 }
 
-export interface EtaItemCode {
-  id: number
-  code_type: string
-  item_code: string
-  description: string
-  description_ar: string | null
-  unit_type: string
-  is_active: boolean
+export function useEtaItemCodesList(params: Ref<EtaListParams> | ComputedRef<EtaListParams>) {
+  const svc = etaService()
+  return useQuery(() => svc.listItemCodes(unref(params)), {
+    key: () => `eta:codes:${JSON.stringify(unref(params))}`,
+    staleMs: 60_000,
+  })
 }
 
-export function useEta() {
-  const api = useApi()
-
-  async function getSettings(): Promise<EtaSettings> {
-    const data = await api.get<{ data: EtaSettings }>('/eta/settings')
-    return data.data
-  }
-
-  async function updateSettings(form: Partial<EtaSettings>): Promise<EtaSettings> {
-    const data = await api.put<{ data: EtaSettings }>('/eta/settings', form)
-    return data.data
-  }
-
-  async function getDocuments(params: Record<string, any> = {}) {
-    const query = new URLSearchParams()
-    Object.entries(params).forEach(([k, v]) => { if (v !== '' && v != null) query.set(k, String(v)) })
-    return api.get<{ data: EtaDocument[]; meta: any }>(`/eta/documents?${query}`)
-  }
-
-  async function prepareDocument(invoiceId: number): Promise<EtaDocument> {
-    const data = await api.post<{ data: EtaDocument }>(`/eta/documents/${invoiceId}/prepare`)
-    return data.data
-  }
-
-  async function submitDocument(invoiceId: number): Promise<EtaDocument> {
-    const data = await api.post<{ data: EtaDocument }>(`/eta/documents/${invoiceId}/submit`)
-    return data.data
-  }
-
-  async function checkStatus(invoiceId: number): Promise<EtaDocument> {
-    const data = await api.post<{ data: EtaDocument }>(`/eta/documents/${invoiceId}/check-status`)
-    return data.data
-  }
-
-  async function cancelDocument(invoiceId: number, reason: string): Promise<EtaDocument> {
-    const data = await api.post<{ data: EtaDocument }>(`/eta/documents/${invoiceId}/cancel`, { reason })
-    return data.data
-  }
-
-  async function getItemCodes(params: Record<string, any> = {}) {
-    const query = new URLSearchParams()
-    Object.entries(params).forEach(([k, v]) => { if (v !== '' && v != null) query.set(k, String(v)) })
-    return api.get<{ data: EtaItemCode[]; meta: any }>(`/eta/item-codes?${query}`)
-  }
-
-  async function createItemCode(form: Partial<EtaItemCode>): Promise<EtaItemCode> {
-    const data = await api.post<{ data: EtaItemCode }>('/eta/item-codes', form)
-    return data.data
-  }
-
-  async function updateItemCode(id: number, form: Partial<EtaItemCode>): Promise<EtaItemCode> {
-    const data = await api.put<{ data: EtaItemCode }>(`/eta/item-codes/${id}`, form)
-    return data.data
-  }
-
-  async function deleteItemCode(id: number): Promise<void> {
-    await api.delete(`/eta/item-codes/${id}`)
-  }
+export function useEtaMutations() {
+  const svc = etaService()
+  const bust = () => invalidateQuery(/^eta:/)
 
   return {
-    getSettings, updateSettings,
-    getDocuments, prepareDocument, submitDocument, checkStatus, cancelDocument,
-    getItemCodes, createItemCode, updateItemCode, deleteItemCode,
+    updateSettings: useMutation(async (form: Partial<EtaSettings>) => {
+      const r = await svc.updateSettings(form)
+      bust()
+      return r
+    }),
+    prepare: useMutation(async (invoiceId: number) => {
+      const r = await svc.prepareDocument(invoiceId, generateRequestId())
+      bust()
+      return r
+    }),
+    submit: useMutation(async (invoiceId: number) => {
+      const r = await svc.submitDocument(invoiceId, generateRequestId())
+      bust()
+      return r
+    }),
+    checkStatus: useMutation(async (invoiceId: number) => {
+      const r = await svc.checkStatus(invoiceId)
+      bust()
+      return r
+    }),
+    cancelDocument: useMutation(async ({ invoiceId, reason }: { invoiceId: number; reason: string }) => {
+      const r = await svc.cancelDocument(invoiceId, reason)
+      bust()
+      return r
+    }),
+    createItemCode: useMutation(async (form: Partial<EtaItemCode>) => {
+      const r = await svc.createItemCode(form, generateRequestId())
+      bust()
+      return r
+    }),
+    updateItemCode: useMutation(async ({ id, form }: { id: number; form: Partial<EtaItemCode> }) => {
+      const r = await svc.updateItemCode(id, form)
+      bust()
+      return r
+    }),
+    removeItemCode: useMutation(async (id: number) => {
+      await svc.removeItemCode(id)
+      bust()
+    }),
+  }
+}
+
+/** Legacy shim. */
+export function useEta() {
+  const svc = etaService()
+
+  return {
+    getSettings:     () => svc.getSettings(),
+    updateSettings:  (form: Partial<EtaSettings>) => svc.updateSettings(form),
+    getDocuments:    (params?: Record<string, any>) => svc.listDocuments((params ?? {}) as EtaListParams),
+    prepareDocument: (id: number) => svc.prepareDocument(id, generateRequestId()),
+    submitDocument:  (id: number) => svc.submitDocument(id, generateRequestId()),
+    checkStatus:     (id: number) => svc.checkStatus(id),
+    cancelDocument:  (id: number, reason: string) => svc.cancelDocument(id, reason),
+    getItemCodes:    (params?: Record<string, any>) => svc.listItemCodes((params ?? {}) as EtaListParams),
+    createItemCode:  (form: Partial<EtaItemCode>) => svc.createItemCode(form, generateRequestId()),
+    updateItemCode:  (id: number, form: Partial<EtaItemCode>) => svc.updateItemCode(id, form),
+    deleteItemCode:  (id: number) => svc.removeItemCode(id),
   }
 }

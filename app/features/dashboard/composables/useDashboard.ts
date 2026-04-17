@@ -1,22 +1,19 @@
-interface DashboardKpis {
-  clients: { total: number; added_this_month: number }
-  invoices: {
-    total: number
-    outstanding: number
-    outstanding_amount: number
-    overdue: number
-    overdue_amount: number
-    paid_this_month: number
-    revenue_this_month: number
-  }
-  payments: { received_this_month: number; count_this_month: number }
-  journal_entries: { total: number; this_month: number }
-  subscription: { plan_name: string | null; status: string | null; trial_days_remaining: number | null }
-  onboarding: { completed: boolean; percent: number }
+import { dashboardService, type DashboardKpis } from '~/features/dashboard/services/dashboardService'
+import { useQuery } from '~/core/api/query'
+
+export type { DashboardKpis }
+
+export function useDashboardKpis() {
+  const svc = dashboardService()
+  return useQuery(() => svc.kpis(), {
+    key: 'dashboard:kpis',
+    staleMs: 60_000,
+  })
 }
 
+/** Legacy shim — matches the prior API (data/loading/error/fetch). */
 export function useDashboard() {
-  const api = useApi()
+  const svc = dashboardService()
   const data = ref<DashboardKpis | null>(null)
   const loading = ref(true)
   const error = ref<string | null>(null)
@@ -25,10 +22,9 @@ export function useDashboard() {
     loading.value = true
     error.value = null
     try {
-      const response = await api.get<{ data: DashboardKpis }>('/dashboard')
-      data.value = response.data
+      data.value = await svc.kpis()
     } catch (e: any) {
-      error.value = e.data?.message || 'Failed to load dashboard'
+      error.value = e?.message || 'Failed to load dashboard'
     } finally {
       loading.value = false
     }

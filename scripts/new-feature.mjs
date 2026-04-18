@@ -2,6 +2,15 @@
 /**
  * Scaffold a new feature slice under app/features/<name>/
  *   node scripts/new-feature.mjs <name>
+ *
+ * Produces:
+ *   feature.ts                    - manifest
+ *   services/<camel>Service.ts    - API layer (uses createCrudService + ENDPOINTS)
+ *   composables/use<Pascal>.ts    - useXList / useX / useXMutations
+ *   pages/index.vue               - starter list page
+ *
+ * After running, register the endpoint paths in app/core/api/endpoints.ts
+ * under a new key, then wire them in the service.
  */
 import { mkdirSync, writeFileSync, existsSync } from 'node:fs'
 import { resolve, join } from 'node:path'
@@ -40,57 +49,43 @@ export default {
 } satisfies FeatureManifest
 `)
 
-writeFileSync(join(root, 'services', `${camel}Service.ts`), `import type { PaginatedResponse } from '~/shared/types/common'
-
-export interface ${pascal}ListParams {
-  page?: number
-  search?: string
-  [key: string]: string | number | boolean | undefined
-}
-
-function toQuery(params: ${pascal}ListParams): string {
-  const q = new URLSearchParams()
-  for (const [k, v] of Object.entries(params)) {
-    if (v === '' || v == null) continue
-    q.set(k, String(v))
-  }
-  const s = q.toString()
-  return s ? \`?\${s}\` : ''
-}
+writeFileSync(join(root, 'services', `${camel}Service.ts`), `import { createCrudService } from '~/core/api/crud'
+import type { BaseListParams } from '~/shared/types/common'
+// import { ENDPOINTS } from '~/core/api/endpoints' — add a '${camel}' group there first
 
 export interface ${pascal} {
   id: number
-  // TODO: shape
+  // TODO: shape from backend spec
 }
 
-export function ${camel}Service() {
-  const api = useApi()
+export type ${pascal}Form = Partial<${pascal}>
 
+export interface ${pascal}ListParams extends BaseListParams {
+  // add feature-specific filters here
+}
+
+/**
+ * Once endpoints are registered, replace the inline paths below with:
+ *   { list: ENDPOINTS.${camel}.list, one: ENDPOINTS.${camel}.one }
+ */
+const crud = createCrudService<${pascal}, ${pascal}Form, ${pascal}ListParams>({
+  list: '${route}',
+  one:  (id) => \`${route}/\${id}\`,
+})
+
+export function ${camel}Service() {
   return {
-    list(params: ${pascal}ListParams = {}) {
-      return api.get<PaginatedResponse<${pascal}>>(\`${route}\${toQuery(params)}\`)
-    },
-    get(id: number) {
-      return api.get<{ data: ${pascal} }>(\`${route}/\${id}\`).then(r => r.data)
-    },
-    create(form: Partial<${pascal}>, idempotencyKey?: string) {
-      return api.post<{ data: ${pascal} }>('${route}', form, { idempotencyKey }).then(r => r.data)
-    },
-    update(id: number, form: Partial<${pascal}>) {
-      return api.put<{ data: ${pascal} }>(\`${route}/\${id}\`, form).then(r => r.data)
-    },
-    remove(id: number) {
-      return api.delete<void>(\`${route}/\${id}\`)
-    },
+    ...crud(),
+    // Add feature-specific actions here (sub-endpoints, bulk, etc.)
   }
 }
 `)
 
-writeFileSync(join(root, 'composables', `use${pascal}.ts`), `import { ${camel}Service, type ${pascal}, type ${pascal}ListParams } from '~/features/${name}/services/${camel}Service'
+writeFileSync(join(root, 'composables', `use${pascal}.ts`), `import { ${camel}Service, type ${pascal}, type ${pascal}Form, type ${pascal}ListParams } from '~/features/${name}/services/${camel}Service'
 import { invalidateQuery, useMutation, useQuery } from '~/core/api/query'
 import { generateRequestId } from '~/core/api/requestId'
 
-export type { ${pascal} }
+export type { ${pascal}, ${pascal}Form, ${pascal}ListParams }
 
 export function use${pascal}List(params: Ref<${pascal}ListParams> | ComputedRef<${pascal}ListParams>) {
   const svc = ${camel}Service()
@@ -120,12 +115,12 @@ export function use${pascal}Mutations() {
   const bust = () => invalidateQuery(/^${name}:/)
 
   return {
-    create: useMutation(async (form: Partial<${pascal}>) => {
+    create: useMutation(async (form: ${pascal}Form) => {
       const r = await svc.create(form, generateRequestId())
       bust()
       return r
     }),
-    update: useMutation(async ({ id, form }: { id: number; form: Partial<${pascal}> }) => {
+    update: useMutation(async ({ id, form }: { id: number; form: ${pascal}Form }) => {
       const r = await svc.update(id, form)
       bust()
       return r
@@ -192,6 +187,8 @@ const columns = computed(() => [
 
 console.log(`✓ Scaffolded app/features/${name}/`)
 console.log(`  Next:`)
-console.log(`    1. Edit feature.ts — set permission / plans / flag as needed`)
-console.log(`    2. Add i18n keys: nav.${camel}`)
-console.log(`    3. Fill out the ${pascal} type + columns`)
+console.log(`    1. Add a '${camel}' group to app/core/api/endpoints.ts`)
+console.log(`    2. Update services/${camel}Service.ts to use ENDPOINTS.${camel}`)
+console.log(`    3. Edit feature.ts — set permission / plans / flag`)
+console.log(`    4. Add i18n keys: nav.${camel}`)
+console.log(`    5. Fill out ${pascal} type from the backend spec`)

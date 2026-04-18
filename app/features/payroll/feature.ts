@@ -1,12 +1,12 @@
 import type { FeatureManifest } from '~/core/subscription/types'
 import { PERMISSIONS } from '~/core/rbac/permissions'
+import { FEATURE_FLAGS } from '~/core/subscription/flags'
 
 export default {
   id: 'payroll',
   routePrefix: '/payroll',
   permission: PERMISSIONS.MANAGE_PAYROLL,
-  plans: ['business', 'enterprise'],
-  flag: 'payroll_enabled',
+  flag: FEATURE_FLAGS.PAYROLL,
   navLabel: 'nav.payroll',
   navIcon: 'payroll',
   navGroup: 'management',

@@ -21,8 +21,8 @@ export function useApi() {
     const token = authStore.token || useCookie('auth_token').value || ''
     if (token) headers.Authorization = `Bearer ${token}`
 
-    const tenantId = useTenantId()
-    if (tenantId) headers['X-Tenant'] = tenantId
+    // Tenant is inferred from the authenticated Sanctum user on the server —
+    // no explicit X-Tenant-ID header is needed for normal app/portal users.
 
     try {
       const { locale } = useI18n()

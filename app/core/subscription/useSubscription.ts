@@ -1,52 +1,51 @@
 import { defineStore } from 'pinia'
-import type { PlanTier, SubscriptionSnapshot, TenantPlan } from './types'
-
-const TIER_ORDER: Record<PlanTier, number> = {
-  free: 0,
-  starter: 1,
-  pro: 2,
-  business: 3,
-  enterprise: 4,
-}
+import type { SubscriptionSnapshot, TenantPlanInfo } from './types'
+import { ENDPOINTS } from '~/core/api/endpoints'
 
 export const useSubscriptionStore = defineStore('subscription', () => {
-  const plan = ref<TenantPlan | null>(null)
-  const flags = ref<Record<string, boolean>>({})
+  const plan = ref<TenantPlanInfo | null>(null)
+  const features = ref<readonly string[]>([])
   const loaded = ref(false)
 
   function hydrate(snapshot: SubscriptionSnapshot) {
     plan.value = snapshot.plan
-    flags.value = snapshot.flags ?? {}
+    features.value = snapshot.features ?? []
     loaded.value = true
   }
 
   function reset() {
     plan.value = null
-    flags.value = {}
+    features.value = []
     loaded.value = false
   }
 
   async function fetch() {
     try {
       const api = useApi()
-      const { data } = await api.get<{ data: SubscriptionSnapshot }>('/me/subscription')
+      const { data } = await api.get<{ data: SubscriptionSnapshot }>(ENDPOINTS.subscription.current)
       hydrate(data)
     } catch {
       // leave defaults; middleware will treat as unprivileged
     }
   }
 
-  function hasPlan(allowed: PlanTier[]): boolean {
-    if (!plan.value) return false
-    const current = TIER_ORDER[plan.value.tier] ?? -1
-    return allowed.some(tier => current >= TIER_ORDER[tier])
-  }
-
+  /** Authoritative gate: the tenant has access to this flag. */
   function isFlagEnabled(key: string): boolean {
-    return !!flags.value[key]
+    return features.value.includes(key)
   }
 
-  return { plan, flags, loaded, hydrate, reset, fetch, hasPlan, isFlagEnabled }
+  /**
+   * Kept for backward compatibility with manifests that still set `plans: [...]`.
+   * Returns true if no constraint is set or if the plan slug is in the list.
+   * Real gating is via isFlagEnabled.
+   */
+  function hasPlan(allowed: readonly string[]): boolean {
+    if (!allowed.length) return true
+    if (!plan.value?.slug) return false
+    return allowed.includes(plan.value.slug)
+  }
+
+  return { plan, features, loaded, hydrate, reset, fetch, hasPlan, isFlagEnabled }
 })
 
 export function useSubscription() {

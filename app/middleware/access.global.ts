@@ -37,10 +37,9 @@ export default defineNuxtRouteMiddleware((to) => {
   if (access.reason === 'permission') {
     return abortNavigation(createError({ statusCode: 403, statusMessage: 'Forbidden' }))
   }
-  if (access.reason === 'plan') {
+  if (access.reason === 'flag' || access.reason === 'plan') {
+    // Feature not included in the tenant's plan — redirect to subscription with
+    // ?required= so the page can show which feature the user needs to unlock.
     return navigateTo(`/subscription?required=${feature.id}`)
-  }
-  if (access.reason === 'flag') {
-    return abortNavigation(createError({ statusCode: 404, statusMessage: 'Not found' }))
   }
 })

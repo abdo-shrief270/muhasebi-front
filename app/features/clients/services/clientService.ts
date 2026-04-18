@@ -1,43 +1,104 @@
-import type { Client, ClientForm, PaginatedResponse } from '~/shared/types/client'
+import type { Client, ClientForm } from '~/shared/types/client'
+import type { BaseListParams, ItemResponse, ListResponse } from '~/shared/types/common'
+import { ENDPOINTS } from '~/core/api/endpoints'
 
-export interface ClientListParams {
-  page?: number
-  search?: string
-  is_active?: boolean
-  [key: string]: string | number | boolean | undefined
+export type ClientStatus = 'active' | 'inactive' | 'archived'
+
+export interface ClientListParams extends BaseListParams {
+  status?: ClientStatus
+  city?: string
+  industry?: string
 }
 
-function toQuery(params: ClientListParams): string {
+export interface ClientAgingBuckets {
+  '0_30': number
+  '31_60': number
+  '61_90': number
+  '90_plus': number
+}
+
+export interface ClientDetail extends Client {
+  balance: number
+  currency: string
+  credit_limit: number | null
+  status: ClientStatus
+  contacts?: Array<Record<string, unknown>>
+  addresses?: Array<Record<string, unknown>>
+  recent_invoices?: Array<{ id: number; number: string; total: number; balance_due: number; status: string }>
+  open_invoices_count?: number
+  aging_buckets?: ClientAgingBuckets
+}
+
+export interface ClientMessage {
+  id: number
+  channel: 'email' | 'whatsapp' | 'sms'
+  direction: 'outbound' | 'inbound'
+  subject: string | null
+  message: string
+  sender: { id: number; name: string } | null
+  attachments: Array<{ id: number; name: string; url: string }>
+  created_at: string
+}
+
+export interface SendMessagePayload {
+  channel: 'email' | 'whatsapp' | 'sms'
+  subject?: string
+  message: string
+  attachments?: Array<string | number>
+}
+
+export interface PortalInvitePayload {
+  email: string
+  name: string
+  send_email?: boolean
+}
+
+function toQuery(p: Record<string, unknown>): string {
   const q = new URLSearchParams()
-  for (const [k, v] of Object.entries(params)) {
+  for (const [k, v] of Object.entries(p)) {
     if (v === '' || v == null) continue
     q.set(k, String(v))
   }
-  const s = q.toString()
-  return s ? `?${s}` : ''
+  return q.toString() ? `?${q}` : ''
 }
 
 export function clientService() {
   const api = useApi()
 
   return {
-    list(params: ClientListParams = {}) {
-      return api.get<PaginatedResponse<Client>>(`/clients${toQuery(params)}`)
-    },
-    get(id: number) {
-      return api.get<{ data: Client }>(`/clients/${id}`).then(r => r.data)
-    },
-    create(form: Partial<ClientForm>, idempotencyKey?: string) {
-      return api.post<{ data: Client }>('/clients', form, { idempotencyKey }).then(r => r.data)
-    },
-    update(id: number, form: Partial<ClientForm>) {
-      return api.put<{ data: Client }>(`/clients/${id}`, form).then(r => r.data)
-    },
-    remove(id: number) {
-      return api.delete<void>(`/clients/${id}`)
-    },
-    toggleActive(id: number) {
-      return api.patch<{ data: Client }>(`/clients/${id}/toggle-active`).then(r => r.data)
+    list: (params: ClientListParams = {}) =>
+      api.get<ListResponse<Client>>(`${ENDPOINTS.clients.list}${toQuery(params)}`),
+    get: (id: number) =>
+      api.get<ItemResponse<ClientDetail>>(ENDPOINTS.clients.one(id)).then(r => r.data),
+    create: (form: Partial<ClientForm>, idempotencyKey?: string) =>
+      api.post<ItemResponse<Client>>(ENDPOINTS.clients.list, form, { idempotencyKey }).then(r => r.data),
+    update: (id: number, form: Partial<ClientForm>) =>
+      api.put<ItemResponse<Client>>(ENDPOINTS.clients.one(id), form).then(r => r.data),
+    remove: (id: number) =>
+      api.delete<void>(ENDPOINTS.clients.one(id)),
+    restore: (id: number) =>
+      api.post<ItemResponse<Client>>(ENDPOINTS.clients.restore(id)).then(r => r.data),
+    toggleActive: (id: number) =>
+      api.patch<ItemResponse<Client>>(ENDPOINTS.clients.toggleActive(id)).then(r => r.data),
+
+    messages: (id: number, params: BaseListParams = {}) =>
+      api.get<ListResponse<ClientMessage>>(`${ENDPOINTS.clients.messages(id)}${toQuery(params)}`),
+    sendMessage: (id: number, payload: SendMessagePayload, idempotencyKey?: string) =>
+      api.post<ItemResponse<ClientMessage>>(ENDPOINTS.clients.messages(id), payload, { idempotencyKey }).then(r => r.data),
+
+    invitePortal: (id: number, payload: PortalInvitePayload, idempotencyKey?: string) =>
+      api.post<{ message: string }>(ENDPOINTS.clients.invitePortal(id), payload, { idempotencyKey }),
+
+    /** Bulk import — returns an ImportJobResource; poll /import/{jobId}. */
+    importCsv: (file: File, idempotencyKey?: string) => {
+      const fd = new FormData()
+      fd.append('file', file)
+      const headers = api.getHeaders()
+      delete (headers as any)['Content-Type']
+      if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey
+      return api.raw<{ data: { id: number; status: string } }>(ENDPOINTS.imports.clients, {
+        method: 'POST', body: fd, headers,
+      })
     },
   }
 }

@@ -8,7 +8,7 @@
       />
 
       <div class="max-w-2xl space-y-6">
-        <!-- Profile section -->
+        <!-- Profile -->
         <div
           v-motion
           :initial="{ opacity: 0, y: 15 }"
@@ -29,22 +29,36 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form @submit.prevent="saveProfile" class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-600 mb-1">{{ $t('auth.fullName') }}</label>
-              <input v-model="profileForm.name" type="text" class="input-field" />
+              <label class="form-label">{{ $t('auth.fullName') }}</label>
+              <input
+                v-model="profile.values.name"
+                type="text"
+                class="input-field"
+                :class="{ 'input-error': profile.errors.value.name }"
+                @input="profile.clearError('name')"
+              />
+              <p v-if="profile.errors.value.name" class="form-error">{{ profile.errors.value.name }}</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-600 mb-1">{{ $t('auth.phone') }}</label>
-              <input v-model="profileForm.phone" type="tel" class="input-field" />
+              <label class="form-label">{{ $t('auth.phone') }}</label>
+              <input
+                v-model="profile.values.phone"
+                type="tel"
+                class="input-field"
+                :class="{ 'input-error': profile.errors.value.phone }"
+                dir="ltr"
+                @input="profile.clearError('phone')"
+              />
+              <p v-if="profile.errors.value.phone" class="form-error">{{ profile.errors.value.phone }}</p>
             </div>
-          </div>
-
-          <div class="mt-4 flex justify-end">
-            <UiAppButton variant="primary" size="sm" :loading="saving" @click="saveProfile">
-              {{ $t('common.save') }}
-            </UiAppButton>
-          </div>
+            <div class="md:col-span-2 flex justify-end">
+              <UiAppButton type="submit" variant="primary" size="sm" :loading="profile.submitting.value">
+                {{ $t('common.save') }}
+              </UiAppButton>
+            </div>
+          </form>
         </div>
 
         <!-- Preferences -->
@@ -58,17 +72,17 @@
             {{ locale === 'ar' ? 'التفضيلات' : 'Preferences' }}
           </h3>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form @submit.prevent="savePreferences" class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-600 mb-1">{{ locale === 'ar' ? 'اللغة' : 'Language' }}</label>
-              <select v-model="prefForm.locale" class="input-field">
+              <label class="form-label">{{ locale === 'ar' ? 'اللغة' : 'Language' }}</label>
+              <select v-model="prefs.values.locale" class="input-field">
                 <option value="ar">العربية</option>
                 <option value="en">English</option>
               </select>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-600 mb-1">{{ locale === 'ar' ? 'المنطقة الزمنية' : 'Timezone' }}</label>
-              <select v-model="prefForm.timezone" class="input-field">
+              <label class="form-label">{{ locale === 'ar' ? 'المنطقة الزمنية' : 'Timezone' }}</label>
+              <select v-model="prefs.values.timezone" class="input-field">
                 <option value="Africa/Cairo">Africa/Cairo (EET)</option>
                 <option value="Asia/Riyadh">Asia/Riyadh (AST)</option>
                 <option value="UTC">UTC</option>
@@ -76,13 +90,12 @@
                 <option value="America/New_York">America/New_York (EST)</option>
               </select>
             </div>
-          </div>
-
-          <div class="mt-4 flex justify-end">
-            <UiAppButton variant="primary" size="sm" @click="savePreferences">
-              {{ $t('common.save') }}
-            </UiAppButton>
-          </div>
+            <div class="md:col-span-2 flex justify-end">
+              <UiAppButton type="submit" variant="primary" size="sm" :loading="prefs.submitting.value">
+                {{ $t('common.save') }}
+              </UiAppButton>
+            </div>
+          </form>
         </div>
 
         <!-- Change Password -->
@@ -96,28 +109,54 @@
             {{ locale === 'ar' ? 'تغيير كلمة المرور' : 'Change Password' }}
           </h3>
 
-          <div class="space-y-4">
+          <form @submit.prevent="changePassword" class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-600 mb-1">{{ locale === 'ar' ? 'كلمة المرور الحالية' : 'Current Password' }}</label>
-              <input v-model="passwordForm.current_password" type="password" class="input-field" />
+              <label class="form-label">{{ locale === 'ar' ? 'كلمة المرور الحالية' : 'Current Password' }}</label>
+              <input
+                v-model="password.values.current_password"
+                type="password"
+                autocomplete="current-password"
+                class="input-field"
+                :class="{ 'input-error': password.errors.value.current_password }"
+                dir="ltr"
+                @input="password.clearError('current_password')"
+              />
+              <p v-if="password.errors.value.current_password" class="form-error">{{ password.errors.value.current_password }}</p>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-600 mb-1">{{ locale === 'ar' ? 'كلمة المرور الجديدة' : 'New Password' }}</label>
-                <input v-model="passwordForm.password" type="password" class="input-field" />
+                <label class="form-label">{{ locale === 'ar' ? 'كلمة المرور الجديدة' : 'New Password' }}</label>
+                <input
+                  v-model="password.values.password"
+                  type="password"
+                  autocomplete="new-password"
+                  class="input-field"
+                  :class="{ 'input-error': password.errors.value.password }"
+                  dir="ltr"
+                  @input="password.clearError('password')"
+                />
+                <p v-if="password.errors.value.password" class="form-error">{{ password.errors.value.password }}</p>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-600 mb-1">{{ $t('auth.confirmPassword') }}</label>
-                <input v-model="passwordForm.password_confirmation" type="password" class="input-field" />
+                <label class="form-label">{{ $t('auth.confirmPassword') }}</label>
+                <input
+                  v-model="password.values.password_confirmation"
+                  type="password"
+                  autocomplete="new-password"
+                  class="input-field"
+                  :class="{ 'input-error': password.errors.value.password_confirmation }"
+                  dir="ltr"
+                  @input="password.clearError('password_confirmation')"
+                />
+                <p v-if="password.errors.value.password_confirmation" class="form-error">{{ password.errors.value.password_confirmation }}</p>
               </div>
             </div>
-          </div>
-
-          <div class="mt-4 flex justify-end">
-            <UiAppButton variant="primary" size="sm" @click="changePassword">
-              {{ locale === 'ar' ? 'تغيير كلمة المرور' : 'Change Password' }}
-            </UiAppButton>
-          </div>
+            <div class="flex justify-end">
+              <UiAppButton type="submit" variant="primary" size="sm" :loading="password.submitting.value">
+                {{ locale === 'ar' ? 'تغيير كلمة المرور' : 'Change Password' }}
+              </UiAppButton>
+            </div>
+          </form>
         </div>
 
         <!-- Danger zone -->
@@ -144,80 +183,81 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({
-  
-  layout: false,
-})
+import {
+  profileDefaults, profileSchema, type ProfileInput,
+  preferencesDefaults, preferencesSchema, type PreferencesInput,
+  passwordChangeDefaults, passwordChangeSchema, type PasswordChangeInput,
+} from '~/features/settings/schemas'
+import type { ApiError } from '~/core/api/errors'
+
+definePageMeta({ layout: false })
 
 const { locale, setLocale } = useI18n()
 const authStore = useAuthStore()
 const toastStore = useToastStore()
 const api = useApi()
 
-const saving = ref(false)
-
-const profileForm = reactive({
-  name: authStore.user?.name || '',
-  phone: authStore.user?.phone || '',
+const profile = useZodForm<ProfileInput>({
+  schema: profileSchema,
+  initial: {
+    name: authStore.user?.name ?? profileDefaults.name,
+    phone: authStore.user?.phone ?? profileDefaults.phone,
+  },
 })
 
-const prefForm = reactive({
-  locale: authStore.user?.locale || 'ar',
-  timezone: authStore.user?.timezone || 'Africa/Cairo',
+const prefs = useZodForm<PreferencesInput>({
+  schema: preferencesSchema,
+  initial: {
+    locale: (authStore.user?.locale as PreferencesInput['locale']) ?? preferencesDefaults.locale,
+    timezone: (authStore.user?.timezone as PreferencesInput['timezone']) ?? preferencesDefaults.timezone,
+  },
 })
 
-const passwordForm = reactive({
-  current_password: '',
-  password: '',
-  password_confirmation: '',
+const password = useZodForm<PasswordChangeInput>({
+  schema: passwordChangeSchema,
+  initial: { ...passwordChangeDefaults },
 })
 
 async function saveProfile() {
-  saving.value = true
-  try {
-    await api.put('/profile', {
-      name: profileForm.name,
-      phone: profileForm.phone,
-    })
+  const result = await profile.handleSubmit(async (data) => {
+    await api.put('/profile', data)
     if (authStore.user) {
-      authStore.user.name = profileForm.name
-      authStore.user.phone = profileForm.phone
+      authStore.user.name = data.name
+      authStore.user.phone = data.phone
     }
+  })
+  if (result.ok) {
     toastStore.success(locale.value === 'ar' ? 'تم تحديث الملف الشخصي' : 'Profile updated')
-  } catch {
-    toastStore.error(locale.value === 'ar' ? 'فشل التحديث' : 'Update failed')
-  } finally {
-    saving.value = false
+  } else if ('error' in result && result.error) {
+    const err = result.error as ApiError
+    profile.applyApiErrors(err)
+    toastStore.error(err.message || 'Error')
   }
 }
 
 async function savePreferences() {
-  try {
-    await api.put('/profile', {
-      locale: prefForm.locale,
-      timezone: prefForm.timezone,
-    })
-    setLocale(prefForm.locale)
+  const result = await prefs.handleSubmit(async (data) => {
+    await api.put('/profile', data)
+  })
+  if (result.ok) {
+    setLocale(prefs.values.locale)
     toastStore.success(locale.value === 'ar' ? 'تم حفظ التفضيلات' : 'Preferences saved')
-  } catch {
-    setLocale(prefForm.locale)
-    toastStore.success(locale.value === 'ar' ? 'تم حفظ التفضيلات' : 'Preferences saved')
+  } else if ('error' in result && result.error) {
+    toastStore.error((result.error as ApiError).message || 'Error')
   }
 }
 
 async function changePassword() {
-  try {
-    await api.post('/change-password', {
-      current_password: passwordForm.current_password,
-      password: passwordForm.password,
-      password_confirmation: passwordForm.password_confirmation,
-    })
+  const result = await password.handleSubmit(async (data) => {
+    await api.post('/change-password', data)
+  })
+  if (result.ok) {
     toastStore.success(locale.value === 'ar' ? 'تم تغيير كلمة المرور' : 'Password changed')
-    passwordForm.current_password = ''
-    passwordForm.password = ''
-    passwordForm.password_confirmation = ''
-  } catch (e: any) {
-    toastStore.error(e.data?.message || (locale.value === 'ar' ? 'فشل تغيير كلمة المرور' : 'Password change failed'))
+    password.reset()
+  } else if ('error' in result && result.error) {
+    const err = result.error as ApiError
+    password.applyApiErrors(err)
+    toastStore.error(err.message || 'Error')
   }
 }
 
@@ -228,7 +268,8 @@ async function logoutAll() {
 </script>
 
 <style scoped>
-.input-field {
-  @apply w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all text-sm bg-gray-50/50;
-}
+.input-field { @apply w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all text-sm bg-gray-50/50; }
+.input-error { @apply border-red-300 focus:ring-red-500/20 focus:border-red-500; }
+.form-label { @apply block text-sm font-medium text-gray-600 mb-1; }
+.form-error { @apply mt-1 text-xs text-red-500; }
 </style>

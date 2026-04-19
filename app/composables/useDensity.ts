@@ -8,9 +8,7 @@
  *   const { rowHeightClass, inputHeightClass } = useDensity()
  *   <tr :class="rowHeightClass" …>
  */
-import { useUiStore } from '~/stores/ui'
-
-export type Density = 'compact' | 'comfortable'
+import { useUiStore, type Density } from '~/stores/ui'
 
 export function useDensity() {
   const ui = useUiStore()

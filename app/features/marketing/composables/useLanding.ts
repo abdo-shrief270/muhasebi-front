@@ -11,12 +11,7 @@
  *   - /faqs             → 404 (not implemented). Returns [].
  *   - /pages/{not-terms/privacy} → 404. Only terms + privacy CMS pages exist today.
  */
-import type { PublicPlan } from '~/features/marketing/services/marketingService'
-
-export interface BilingualText {
-  ar: string
-  en: string
-}
+import type { PublicPlan, BilingualText } from '~/features/marketing/services/marketingService'
 
 export interface LandingData {
   hero: {

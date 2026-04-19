@@ -6,7 +6,6 @@ import { invalidateQuery, useMutation, useQuery } from '~/core/api/query'
 import { generateIdempotencyKey } from '~/core/api/requestId'
 import type { BaseListParams } from '~/shared/types/common'
 
-export type { EtaDocument, EtaItemCode, EtaSettings, EtaDocumentListParams }
 
 export function useEtaSettings() {
   const svc = etaService()

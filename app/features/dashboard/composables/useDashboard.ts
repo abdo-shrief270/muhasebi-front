@@ -1,8 +1,6 @@
 import { dashboardService, type DashboardKpis } from '~/features/dashboard/services/dashboardService'
 import { useQuery } from '~/core/api/query'
 
-export type { DashboardKpis }
-
 export function useDashboardKpis() {
   const svc = dashboardService()
   return useQuery(() => svc.kpis(), {

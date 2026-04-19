@@ -1,3 +1,10 @@
+import type { BlogPost, BlogCategory, BlogTag } from '~/features/blog/services/blogService'
+
+export interface PaginatedBlogPosts {
+  data: BlogPost[]
+  meta: { current_page: number; last_page: number; total: number }
+}
+
 export function useBlog() {
   const api = useApi()
 
@@ -40,42 +47,4 @@ export function useBlog() {
   }
 
   return { getPosts, getPost, getFeatured, getCategories, getTags }
-}
-
-export interface BlogPost {
-  id: number
-  slug: string
-  title: { ar: string; en: string }
-  excerpt: { ar: string; en: string }
-  content: { ar: string; en: string }
-  cover_image: string | null
-  meta_description: { ar: string; en: string }
-  author_name: string | null
-  is_published: boolean
-  is_featured: boolean
-  published_at: string | null
-  reading_time: number
-  views_count: number
-  category?: { id: number; slug: string; name: { ar: string; en: string } }
-  tags?: { id: number; slug: string; name: { ar: string; en: string } }[]
-}
-
-export interface BlogCategory {
-  id: number
-  slug: string
-  name: { ar: string; en: string }
-  description: { ar: string; en: string }
-  posts_count?: number
-}
-
-export interface BlogTag {
-  id: number
-  slug: string
-  name: { ar: string; en: string }
-  posts_count?: number
-}
-
-export interface PaginatedBlogPosts {
-  data: BlogPost[]
-  meta: { current_page: number; last_page: number; total: number }
 }

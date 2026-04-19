@@ -2,8 +2,6 @@ import { documentService, type Document, type DocumentCategory, type DocumentLis
 import { invalidateQuery, useMutation, useQuery } from '~/core/api/query'
 import { generateIdempotencyKey } from '~/core/api/requestId'
 
-export type { Document, DocumentCategory, DocumentListParams }
-
 export function useDocumentsList(params: Ref<DocumentListParams> | ComputedRef<DocumentListParams>) {
   const svc = documentService()
   return useQuery(() => svc.list(unref(params)), {

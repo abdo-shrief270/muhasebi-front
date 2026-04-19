@@ -30,7 +30,7 @@ export interface PreCheckResult {
   warnings: string[]
 }
 
-export interface CancelPayload {
+export interface InvoiceCancelPayload {
   reason: string
 }
 
@@ -104,7 +104,7 @@ export function invoiceService() {
 
     preCheck: (payload: PreCheckPayload) =>
       api.post<PreCheckResult>(ENDPOINTS.invoices.preCheck, payload),
-    cancel: (id: number, payload: CancelPayload, idempotencyKey?: string) =>
+    cancel: (id: number, payload: InvoiceCancelPayload, idempotencyKey?: string) =>
       api.post<ItemResponse<Invoice>>(ENDPOINTS.invoices.cancel(id), payload, { idempotencyKey }).then(r => r.data),
     postToGL: (id: number, idempotencyKey?: string) =>
       api.post<ItemResponse<Invoice>>(ENDPOINTS.invoices.postToGL(id), undefined, { idempotencyKey }).then(r => r.data),

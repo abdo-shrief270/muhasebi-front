@@ -51,7 +51,7 @@ export interface ChangePlanPayload {
   effective_date?: 'immediate' | 'end_of_period'
 }
 
-export interface CancelPayload {
+export interface SubscriptionCancelPayload {
   reason?: string
   immediate?: boolean
 }
@@ -106,7 +106,7 @@ export function subscriptionService() {
       api.post<ItemResponse<SubscriptionRecord>>(
         ENDPOINTS.subscription.renew, payload, { idempotencyKey },
       ).then(r => r.data),
-    cancel: (payload: CancelPayload = {}, idempotencyKey?: string) =>
+    cancel: (payload: SubscriptionCancelPayload = {}, idempotencyKey?: string) =>
       api.post<ItemResponse<SubscriptionRecord>>(
         ENDPOINTS.subscription.cancel, payload, { idempotencyKey },
       ).then(r => r.data),

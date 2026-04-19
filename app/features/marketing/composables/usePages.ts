@@ -1,3 +1,5 @@
+import type { CmsPage } from '~/features/marketing/services/marketingService'
+
 export function usePages() {
   const api = useApi()
 
@@ -9,15 +11,4 @@ export function usePages() {
   }
 
   return { getPage }
-}
-
-export interface CmsPage {
-  id: number
-  slug: string
-  title: { ar: string; en: string }
-  content: { ar: string; en: string }
-  meta_description: { ar: string; en: string }
-  is_published: boolean
-  created_at: string
-  updated_at: string
 }

@@ -16,11 +16,28 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
 
   modules: [
-    '@nuxtjs/tailwindcss',
+    '@nuxt/ui',
+    '@nuxtjs/fontaine',
     '@pinia/nuxt',
     '@nuxtjs/i18n',
     '@vueuse/nuxt',
   ],
+
+  /**
+   * Tailwind v4 is bundled by @nuxt/ui via its preset.
+   * Design tokens live in app/assets/css/tokens.css (via @theme),
+   * Nuxt UI aliases live in app/app.config.ts.
+   */
+  css: ['~/assets/css/tokens.css'],
+
+  ui: {
+    // Nuxt UI v4 module options go here if needed.
+  },
+
+  colorMode: {
+    classSuffix: '',
+    storageKey: 'muhasebi-color-mode',
+  },
 
   components: {
     dirs: [
@@ -105,28 +122,6 @@ export default defineNuxtConfig({
     },
   },
 
-  tailwindcss: {
-    config: {
-      theme: {
-        extend: {
-          fontFamily: {
-            cairo: ['Cairo', 'sans-serif'],
-          },
-          colors: {
-            primary: {
-              50: '#eef2f7', 100: '#d5dde8', 200: '#a8b8ce', 300: '#7b93b4', 400: '#4e6e9a',
-              500: '#2c3e50', 600: '#243445', 700: '#1c293a', 800: '#141e2f', 900: '#0c1424',
-            },
-            secondary: {
-              50: '#ebf5fc', 100: '#cee5f6', 200: '#9dcbee', 300: '#6cb1e5', 400: '#3498db',
-              500: '#2980b9', 600: '#1f6897', 700: '#155075', 800: '#0b3853', 900: '#012031',
-            },
-          },
-        },
-      },
-    },
-  },
-
   nitro: {
     routeRules: {
       '/**': {
@@ -160,9 +155,11 @@ export default defineNuxtConfig({
       link: [
         { rel: 'manifest', href: '/manifest.json' },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
         {
           rel: 'stylesheet',
-          href: 'https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap',
+          // Spec §3.2: Inter (Latin) + IBM Plex Sans Arabic + JetBrains Mono
+          href: 'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap',
         },
       ],
     },

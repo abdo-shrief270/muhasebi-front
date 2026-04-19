@@ -41,7 +41,10 @@ export default defineNuxtConfig({
 
   components: {
     dirs: [
-      { path: '~/shared/ui', pathPrefix: false },
+      // Pages historically reference shared primitives as <UiAppButton>, <UiSlideOver>,
+      // <UiPageHeader>, etc. The `Ui` prefix must be declared here — the files in
+      // shared/ui/ are named AppButton.vue, SlideOver.vue, … without the prefix.
+      { path: '~/shared/ui', prefix: 'Ui', pathPrefix: false },
       ...featureDirs('components').map(path => ({ path, pathPrefix: false })),
       { path: '~/core/rbac', pathPrefix: false, pattern: '**/*.vue' },
       { path: '~/core/subscription', pathPrefix: false, pattern: '**/*.vue' },

@@ -1,19 +1,16 @@
 <template>
-  <div :dir="locale === 'ar' ? 'rtl' : 'ltr'">
-    <NuxtLoadingIndicator color="#3498db" :height="3" />
+  <UApp>
+    <NuxtLoadingIndicator color="var(--color-primary-500, #2c3e50)" :height="2" />
     <NuxtPage />
-    <UiToastContainer />
-  </div>
+    <UiOfflineIndicator />
+  </UApp>
 </template>
 
 <script setup lang="ts">
-const { locale } = useI18n()
-
+// `<html dir="..">` + font-family is set by plugins/direction.ts on both
+// SSR and client. Keep this shell minimal — overlays (toasts, modals,
+// slide-overs) are portaled inside <UApp>.
 useHead({
-  htmlAttrs: {
-    lang: locale,
-    dir: computed(() => locale.value === 'ar' ? 'rtl' : 'ltr'),
-  },
   link: [
     { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
   ],

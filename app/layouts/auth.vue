@@ -1,5 +1,23 @@
 <template>
-  <div class="min-h-screen flex" :dir="locale === 'ar' ? 'rtl' : 'ltr'">
+  <div class="min-h-screen flex relative">
+    <!-- Top-corner toggles -->
+    <div class="absolute top-4 end-4 z-20 flex items-center gap-1">
+      <button
+        type="button"
+        class="w-9 h-9 flex items-center justify-center rounded-lg bg-white/80 backdrop-blur text-neutral-500 hover:bg-white hover:text-neutral-900 transition-colors shadow-sm"
+        @click="toggleDarkMode"
+        :aria-label="isDark ? 'Light mode' : 'Dark mode'"
+      >
+        <UIcon :name="isDark ? 'i-lucide-sun' : 'i-lucide-moon'" class="w-4 h-4" />
+      </button>
+      <button
+        type="button"
+        class="h-9 px-3 rounded-lg bg-white/80 backdrop-blur text-xs font-medium text-neutral-500 hover:bg-white hover:text-neutral-900 transition-colors shadow-sm"
+        @click="toggleLocale"
+      >
+        {{ locale === 'ar' ? 'EN' : 'عر' }}
+      </button>
+    </div>
     <!-- Left panel — branding -->
     <div class="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 relative overflow-hidden">
       <!-- Decorative shapes -->
@@ -55,7 +73,7 @@
         v-motion
         :initial="{ opacity: 0, x: locale === 'ar' ? -20 : 20 }"
         :enter="{ opacity: 1, x: 0, transition: { delay: 100 } }"
-        class="w-full max-w-md"
+        class="w-full max-w-[420px]"
       >
         <!-- Mobile logo -->
         <div class="lg:hidden text-center mb-10">
@@ -81,6 +99,7 @@
 
 <script setup lang="ts">
 const { locale, setLocale } = useI18n()
+const { isDark, toggle: toggleDarkMode } = useDarkMode()
 
 function toggleLocale() {
   setLocale(locale.value === 'ar' ? 'en' : 'ar')

@@ -7,16 +7,21 @@
  */
 import { useUiStore } from '~/stores/ui'
 
-export default defineNuxtPlugin(() => {
-  const ui = useUiStore()
-  const mode = useColorMode()
+export default defineNuxtPlugin({
+  name: 'muhasebi:color-mode',
+  // Wait for @pinia/nuxt so useUiStore() resolves.
+  dependsOn: ['pinia'],
+  setup() {
+    const ui = useUiStore()
+    const mode = useColorMode()
 
-  // Seed Nuxt UI's runtime mode from the persisted preference.
-  mode.preference = ui.colorMode
+    // Seed Nuxt UI's runtime mode from the persisted preference.
+    mode.preference = ui.colorMode
 
-  // Keep them in sync both ways. Store → Nuxt UI.
-  watch(
-    () => ui.colorMode,
-    (next) => { mode.preference = next },
-  )
+    // Keep them in sync both ways. Store → Nuxt UI.
+    watch(
+      () => ui.colorMode,
+      (next) => { mode.preference = next },
+    )
+  },
 })

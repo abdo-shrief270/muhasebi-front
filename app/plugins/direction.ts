@@ -1,29 +1,38 @@
 /**
- * Pre-hydration direction / font-family sync — §5.1 of docs/UI_UX_SPEC.md.
+ * Direction / font-family sync — §5.1 of docs/UI_UX_SPEC.md.
  *
- * This plugin runs BOTH on the server (SSR) and the client, so the very
- * first paint already has `<html dir>` set. Without this, Arabic users
- * would flash an LTR layout before hydration completes.
+ * Plugins can't call `useI18n()` directly (it's setup-only). We reach into
+ * `nuxtApp.$i18n` exposed by @nuxtjs/i18n instead. Runs BOTH on the server
+ * (SSR) and the client, so the very first paint already has `<html dir>` set.
  */
 export default defineNuxtPlugin({
   name: 'muhasebi:direction',
-  enforce: 'pre',
-  setup() {
-    const { applyHtmlAttrs, current } = useLocale()
+  dependsOn: ['i18n:plugin'],
+  setup(nuxtApp) {
+    const i18n = nuxtApp.$i18n as any
+    if (!i18n) return
 
-    // Initial set (runs on client hydration + on SSR via useHead below).
-    applyHtmlAttrs(current.value)
+    const localeRef = i18n.locale as { value: string } & Ref<string>
 
-    // Keep in sync when the locale switches at runtime.
-    watch(current, (next) => applyHtmlAttrs(next))
+    function apply(next: string) {
+      const dir = next === 'ar' ? 'rtl' : 'ltr'
+      const fontClass = next === 'ar' ? 'font-sans-arabic' : 'font-sans-latin'
 
-    // SSR: write lang + dir into the rendered html tag.
-    useHead({
-      htmlAttrs: {
-        lang: current.value,
-        dir: current.value === 'ar' ? 'rtl' : 'ltr',
-        class: current.value === 'ar' ? 'font-sans-arabic' : 'font-sans-latin',
-      },
-    })
+      if (import.meta.client) {
+        const html = document.documentElement
+        html.setAttribute('lang', next)
+        html.setAttribute('dir', dir)
+        html.classList.toggle('font-sans-arabic', next === 'ar')
+        html.classList.toggle('font-sans-latin', next !== 'ar')
+      }
+      // SSR: write lang + dir into the rendered html tag via useHead.
+      useHead({
+        htmlAttrs: { lang: next, dir, class: fontClass },
+      })
+    }
+
+    apply(localeRef.value)
+
+    watch(localeRef, (next) => apply(next))
   },
 })

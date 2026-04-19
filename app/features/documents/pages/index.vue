@@ -117,8 +117,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Document } from '~/shared/types/document'
-import { documentService, type DocumentListParams } from '~/features/documents/services/documentService'
+import { documentService, type Document, type DocumentListParams } from '~/features/documents/services/documentService'
 import type { ApiError } from '~/core/api/errors'
 
 definePageMeta({ layout: false })

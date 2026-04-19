@@ -1,7 +1,8 @@
-import type { Document } from '~/shared/types/document'
-import { documentService, type DocumentListParams } from '~/features/documents/services/documentService'
+import { documentService, type Document, type DocumentCategory, type DocumentListParams } from '~/features/documents/services/documentService'
 import { invalidateQuery, useMutation, useQuery } from '~/core/api/query'
 import { generateRequestId } from '~/core/api/requestId'
+
+export type { Document, DocumentCategory, DocumentListParams }
 
 export function useDocumentsList(params: Ref<DocumentListParams> | ComputedRef<DocumentListParams>) {
   const svc = documentService()

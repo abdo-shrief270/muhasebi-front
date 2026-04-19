@@ -1,18 +1,5 @@
 import { z } from 'zod'
-
-const optionalTrimmed = z.string().trim().default('')
-
-const optionalEmail = z
-  .string()
-  .trim()
-  .default('')
-  .refine(v => v === '' || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), 'Invalid email address')
-
-const egyptianTaxId = z
-  .string()
-  .trim()
-  .default('')
-  .refine(v => v === '' || /^\d{9}(\d{3})?$/.test(v.replace(/[-\s]/g, '')), 'Tax ID must be 9 or 12 digits')
+import { egyptianTaxId, optionalEmail, optionalPhone, optionalTrimmed } from '~/shared/utils/zod-helpers'
 
 export const clientFormSchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters').max(200),
@@ -22,10 +9,10 @@ export const clientFormSchema = z.object({
   activity_type: optionalTrimmed,
   address: optionalTrimmed,
   city: optionalTrimmed,
-  phone: optionalTrimmed,
+  phone: optionalPhone,
   email: optionalEmail,
   contact_person: optionalTrimmed,
-  contact_phone: optionalTrimmed,
+  contact_phone: optionalPhone,
   notes: optionalTrimmed,
 })
 

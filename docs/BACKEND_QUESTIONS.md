@@ -6,6 +6,50 @@ Each item lists: **what the frontend currently assumes** → **what we need conf
 
 ---
 
+## 00 · Live-API drift (added 2026-04-19 from probing `api.muhasebi.com`)
+
+Public endpoints were probed without auth. Frontend types + services have been updated to match; flagging here so the docs (`01-*.md` through `28-*.md`) can be corrected to reflect reality.
+
+### 0.1 Base URL prefix
+- **Docs say:** `Base URL: /v1`
+- **Reality:** `/api/v1` (verified via OpenAPI server entry + 404 on `/v1/*`)
+- **Frontend action:** reverted default to `https://api.muhasebi.com/api/v1`
+
+### 0.2 Bilingual text on CMS/blog/plans
+- **Docs imply:** plain strings (`title`, `content`, etc.)
+- **Reality:** `{ ar: string, en: string }` objects on every user-facing text field across `/plans`, `/pages/{slug}`, `/blog`, `/blog/categories`, `/blog/tags`. Exception: `/plans` uses `name_en` + `name_ar` (separate fields), NOT the bilingual object shape.
+- **Frontend action:** `BilingualText` type added; `CmsPage`, `BlogPost`, `BlogCategory`, `BlogTag` updated.
+
+### 0.3 `PublicPlan` field names + types
+- **Docs say:** `name, price_egp_monthly: number, price_egp_yearly: number, features: string[]`
+- **Reality:**
+  - `name_en` + `name_ar` (split, not bilingual object)
+  - `price_monthly: "0.00"`, `price_annual: "0.00"` — **decimal strings**, note `annual` not `yearly`
+  - `features: Record<flag_slug, boolean>` — **boolean map**, not an array of enabled slugs
+  - Plus: `description_en/ar`, `trial_days`, `currency`, `is_active`, `sort_order`
+  - `limits` keys: `max_users`, `max_clients`, `max_storage_bytes`, `max_invoices_per_month`
+- **Frontend action:** `PublicPlan` type fully rewritten. `useLanding` now has an `adaptPlan()` that maps to the bilingual-friendly shape existing marketing components expect (preserving Pricing.vue contract unchanged). 23 flag slugs have Arabic + English marketing-bullet labels baked in.
+
+### 0.4 Broken public endpoints
+Flagged for backend fix:
+- `GET /api/v1/landing` → **HTTP 500** (`error: server_error`). Marketing hero/features/modules/testimonials all come from here. Frontend gracefully falls back to null.
+- `GET /api/v1/testimonials` → **HTTP 404** (not implemented). Referenced in `useLanding.getPublicTestimonials()` + `endpoints.ts`. Returns `[]` to callers.
+- `GET /api/v1/faqs` → **HTTP 404** (not implemented). Same treatment.
+
+### 0.5 Paginated `meta` has more fields than typed
+- **Docs say:** `{ current_page, per_page, total, last_page }`
+- **Reality:** also `from`, `to`, `path`, and Laravel's `links: [{url, label, page, active}]` bootstrap-style page-nav array.
+- **Frontend action:** `ListMeta` expanded (all new fields optional). No consumer breakage.
+
+### 0.6 Validation error top-level slug
+- **Reality:** 422 body is `{ error: "validation_error", message: "...", errors: {...} }`. The `error` slug is added on top of `message` + `errors`.
+- **Frontend action:** `ApiValidationError` updated. Error-mapping code only needs `errors`, so no behavior change; noted for discoverability.
+
+### 0.7 OpenAPI spec has no `components.schemas`
+The `/api/v1/docs/spec` OpenAPI is sparse — 257 paths but zero reusable schema definitions (Laravel-default). Auto-generating types from this spec would only give path/method signatures, not shapes. Hand-curated types remain the better source of truth.
+
+---
+
 ## 01 · Auth & 2FA
 
 ### 1.1 Token scope after `requires_2fa: true`

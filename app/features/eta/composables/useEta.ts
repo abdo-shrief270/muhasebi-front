@@ -3,7 +3,7 @@ import {
   type EtaDocument, type EtaDocumentListParams, type EtaItemCode, type EtaItemCodeForm, type EtaSettings, type EtaSettingsForm, type EtaCodeType,
 } from '~/features/eta/services/etaService'
 import { invalidateQuery, useMutation, useQuery } from '~/core/api/query'
-import { generateRequestId } from '~/core/api/requestId'
+import { generateIdempotencyKey } from '~/core/api/requestId'
 import type { BaseListParams } from '~/shared/types/common'
 
 export type { EtaDocument, EtaItemCode, EtaSettings, EtaDocumentListParams }
@@ -51,12 +51,12 @@ export function useEtaMutations() {
       return r
     }),
     prepare: useMutation(async (invoiceId: number) => {
-      const r = await svc.documents.prepare(invoiceId, generateRequestId())
+      const r = await svc.documents.prepare(invoiceId, generateIdempotencyKey())
       bust()
       return r
     }),
     submit: useMutation(async (invoiceId: number) => {
-      const r = await svc.documents.submit(invoiceId, generateRequestId())
+      const r = await svc.documents.submit(invoiceId, generateIdempotencyKey())
       bust()
       return r
     }),
@@ -66,23 +66,23 @@ export function useEtaMutations() {
       return r
     }),
     cancelDocument: useMutation(async ({ invoiceId, reason }: { invoiceId: number; reason: string }) => {
-      const r = await svc.documents.cancel(invoiceId, reason, generateRequestId())
+      const r = await svc.documents.cancel(invoiceId, reason, generateIdempotencyKey())
       bust()
       return r
     }),
     bulkRetry: useMutation(async (payload: { from_date?: string; to_date?: string } = {}) => {
-      const r = await svc.bulkRetry(payload, generateRequestId())
+      const r = await svc.bulkRetry(payload, generateIdempotencyKey())
       bust()
       return r
     }),
     bulkStatusCheck: useMutation(async () => {
-      const r = await svc.bulkStatusCheck(generateRequestId())
+      const r = await svc.bulkStatusCheck(generateIdempotencyKey())
       bust()
       return r
     }),
 
     createItemCode: useMutation(async (form: EtaItemCodeForm) => {
-      const r = await svc.itemCodes.create(form, generateRequestId())
+      const r = await svc.itemCodes.create(form, generateIdempotencyKey())
       bust()
       return r
     }),
@@ -106,12 +106,12 @@ export function useEta() {
     getSettings:     () => svc.settings.get(),
     updateSettings:  (form: EtaSettingsForm) => svc.settings.update(form),
     getDocuments:    (params?: Record<string, any>) => svc.documents.list((params ?? {}) as EtaDocumentListParams),
-    prepareDocument: (id: number) => svc.documents.prepare(id, generateRequestId()),
-    submitDocument:  (id: number) => svc.documents.submit(id, generateRequestId()),
+    prepareDocument: (id: number) => svc.documents.prepare(id, generateIdempotencyKey()),
+    submitDocument:  (id: number) => svc.documents.submit(id, generateIdempotencyKey()),
     checkStatus:     (id: number) => svc.documents.checkStatus(id),
-    cancelDocument:  (id: number, reason: string) => svc.documents.cancel(id, reason, generateRequestId()),
+    cancelDocument:  (id: number, reason: string) => svc.documents.cancel(id, reason, generateIdempotencyKey()),
     getItemCodes:    (params?: Record<string, any>) => svc.itemCodes.list((params ?? {}) as BaseListParams & { code_type?: EtaCodeType }),
-    createItemCode:  (form: EtaItemCodeForm) => svc.itemCodes.create(form, generateRequestId()),
+    createItemCode:  (form: EtaItemCodeForm) => svc.itemCodes.create(form, generateIdempotencyKey()),
     updateItemCode:  (id: number, form: Partial<EtaItemCodeForm>) => svc.itemCodes.update(id, form),
     deleteItemCode:  (id: number) => svc.itemCodes.remove(id),
   }

@@ -1,7 +1,7 @@
 import type { Invoice, InvoiceForm, Payment, PaymentForm } from '~/shared/types/invoice'
 import { invoiceService, type InvoiceListParams } from '~/features/invoices/services/invoiceService'
 import { invalidateQuery, useQuery, useMutation } from '~/core/api/query'
-import { generateRequestId } from '~/core/api/requestId'
+import { generateIdempotencyKey } from '~/core/api/requestId'
 
 export function useInvoicesList(params: Ref<InvoiceListParams> | ComputedRef<InvoiceListParams>) {
   const svc = invoiceService()
@@ -31,7 +31,7 @@ export function useInvoiceMutations() {
   const bust = () => invalidateQuery(/^invoices:/)
 
   const create = useMutation(async (form: Partial<InvoiceForm>) => {
-    const res = await svc.create(form, generateRequestId())
+    const res = await svc.create(form, generateIdempotencyKey())
     bust()
     return res
   })
@@ -48,7 +48,7 @@ export function useInvoiceMutations() {
   })
 
   const send = useMutation(async (id: number) => {
-    const res = await svc.send(id, generateRequestId())
+    const res = await svc.send(id, generateIdempotencyKey())
     bust()
     return res
   })
@@ -72,7 +72,7 @@ export function useInvoiceMutations() {
   })
 
   const recordPayment = useMutation(async (form: PaymentForm) => {
-    const res = await svc.recordPayment(form, generateRequestId())
+    const res = await svc.recordPayment(form, generateIdempotencyKey())
     bust()
     return res
   })
@@ -111,13 +111,13 @@ export function useInvoices() {
     invoices, loading, meta,
     fetchInvoices,
     getInvoice:       (id: number) => svc.get(id),
-    createInvoice:    (f: Partial<InvoiceForm>) => svc.create(f, generateRequestId()),
+    createInvoice:    (f: Partial<InvoiceForm>) => svc.create(f, generateIdempotencyKey()),
     updateInvoice:    (id: number, f: Partial<InvoiceForm>) => svc.update(id, f),
     deleteInvoice:    (id: number) => svc.remove(id),
-    sendInvoice:      (id: number) => svc.send(id, generateRequestId()),
+    sendInvoice:      (id: number) => svc.send(id, generateIdempotencyKey()),
     cancelInvoice:    (id: number) => svc.cancel(id),
     postToGL:         (id: number) => svc.postToGL(id),
     createCreditNote: (id: number, lines: any[]) => svc.createCreditNote(id, lines),
-    recordPayment:    (f: PaymentForm) => svc.recordPayment(f, generateRequestId()),
+    recordPayment:    (f: PaymentForm) => svc.recordPayment(f, generateIdempotencyKey()),
   }
 }

@@ -1,6 +1,7 @@
 /**
  * Every permission slug the backend may return on /me.permissions[].
- * Extracted from the module docs under docs/01..28-*.md.
+ * Verified against config/permissions.php on 2026-04-19
+ * (BACKEND_QUESTIONS 10.1). 31 canonical slugs.
  *
  * Route protection is done server-side via `permission:*` middleware.
  * The frontend only USES these values to hide/show UI.
@@ -54,20 +55,16 @@ export const PERMISSIONS = {
   MANAGE_TIMESHEETS:        'manage_timesheets',
   APPROVE_TIMESHEETS:       'approve_timesheets',
 
-  // ---- engagements
-  MANAGE_ENGAGEMENTS:       'manage_engagements',
-
   // ---- reports
   VIEW_REPORTS:             'view_reports',
-  MANAGE_REPORTS:           'manage_reports',
-
-  // ---- approvals / alerts
-  MANAGE_APPROVALS:         'manage_approvals',
-  MANAGE_ALERTS:            'manage_alerts',
 
   // ---- documents / integrations
   MANAGE_DOCUMENTS:         'manage_documents',
   MANAGE_INTEGRATIONS:      'manage_integrations',
+
+  // REMOVED 2026-04-19 (BACKEND_QUESTIONS 10.1): these slugs do NOT exist in
+  // config/permissions.php today. Re-add only after the backend adds them.
+  //   MANAGE_ENGAGEMENTS, MANAGE_REPORTS, MANAGE_APPROVALS, MANAGE_ALERTS
 } as const
 
 export type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS]

@@ -1,6 +1,6 @@
 import { documentService, type Document, type DocumentCategory, type DocumentListParams } from '~/features/documents/services/documentService'
 import { invalidateQuery, useMutation, useQuery } from '~/core/api/query'
-import { generateRequestId } from '~/core/api/requestId'
+import { generateIdempotencyKey } from '~/core/api/requestId'
 
 export type { Document, DocumentCategory, DocumentListParams }
 
@@ -18,7 +18,7 @@ export function useDocumentMutations() {
 
   return {
     upload: useMutation(async ({ file, data }: { file: File; data?: Record<string, unknown> }) => {
-      const r = await svc.upload(file, data, generateRequestId())
+      const r = await svc.upload(file, data, generateIdempotencyKey())
       bust()
       return r
     }),
@@ -64,7 +64,7 @@ export function useDocuments() {
   return {
     documents, loading, meta,
     fetchDocuments,
-    uploadDocument:    (file: File, data?: Record<string, any>) => svc.upload(file, data ?? {}, generateRequestId()),
+    uploadDocument:    (file: File, data?: Record<string, any>) => svc.upload(file, data ?? {}, generateIdempotencyKey()),
     downloadUrl:       (id: number) => svc.downloadUrl(id),
     archiveDocument:   (id: number) => svc.archive(id),
     unarchiveDocument: (id: number) => svc.unarchive(id),

@@ -1,7 +1,7 @@
 import type { Client, ClientForm } from '~/shared/types/client'
 import { clientService, type ClientListParams } from '~/features/clients/services/clientService'
 import { invalidateQuery, useMutation, useQuery } from '~/core/api/query'
-import { generateRequestId } from '~/core/api/requestId'
+import { generateIdempotencyKey } from '~/core/api/requestId'
 
 export function useClientsList(params: Ref<ClientListParams> | ComputedRef<ClientListParams>) {
   const svc = clientService()
@@ -32,7 +32,7 @@ export function useClientMutations() {
 
   return {
     create: useMutation(async (form: Partial<ClientForm>) => {
-      const r = await svc.create(form, generateRequestId())
+      const r = await svc.create(form, generateIdempotencyKey())
       bust()
       return r
     }),
@@ -81,7 +81,7 @@ export function useClients() {
     clients, loading, meta,
     fetchClients,
     getClient:    (id: number) => svc.get(id),
-    createClient: (f: Partial<ClientForm>) => svc.create(f, generateRequestId()),
+    createClient: (f: Partial<ClientForm>) => svc.create(f, generateIdempotencyKey()),
     updateClient: (id: number, f: Partial<ClientForm>) => svc.update(id, f),
     deleteClient: (id: number) => svc.remove(id),
     toggleActive: (id: number) => svc.toggleActive(id),

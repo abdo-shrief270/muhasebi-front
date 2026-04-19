@@ -56,9 +56,19 @@ export function useApi() {
         if (import.meta.client) navigateTo('/auth/login')
       }
       if (response.status === 403 && import.meta.client) {
-        try {
-          useToastStore().error(response._data?.message || 'Insufficient permissions.')
-        } catch {}
+        // Backend signals 2FA enrollment requirement via a typed code — see
+        // BACKEND_QUESTIONS 1.1. Route to the settings page that owns the flow.
+        if (response._data?.code === '2fa_required') {
+          navigateTo('/settings/security')
+        } else {
+          try {
+            useToastStore().error(response._data?.message || 'Insufficient permissions.')
+          } catch {}
+        }
+      }
+      if (response.status === 409 && response._data?.error === 'request_in_progress') {
+        // Concurrent idempotent submission — client MUST wait (30s lock window).
+        // Swallowed here; callers can still see the thrown ApiError.
       }
       if (response.status === 429 && import.meta.client) {
         try {

@@ -1,10 +1,11 @@
 import type { FeatureManifest } from '~/core/subscription/types'
-import { PERMISSIONS } from '~/core/rbac/permissions'
+
+// NOTE: no dedicated `manage_engagements` permission in the backend yet
+// (BACKEND_QUESTIONS 10.1). Gating by feature access only until the slug lands.
 
 export default {
   id: 'engagements',
   routePrefix: '/engagements',
-  permission: PERMISSIONS.MANAGE_ENGAGEMENTS,
   navLabel: 'nav.engagements',
   navIcon: 'briefcase',
   navGroup: 'management',

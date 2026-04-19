@@ -1,7 +1,7 @@
 import type { JournalEntry, JournalEntryForm } from '~/shared/types/accounting'
 import { journalEntryService, type JournalEntryListParams } from '~/features/journal-entries/services/journalEntryService'
 import { invalidateQuery, useMutation, useQuery } from '~/core/api/query'
-import { generateRequestId } from '~/core/api/requestId'
+import { generateIdempotencyKey } from '~/core/api/requestId'
 
 export function useJournalEntriesList(params: Ref<JournalEntryListParams> | ComputedRef<JournalEntryListParams>) {
   const svc = journalEntryService()
@@ -32,17 +32,17 @@ export function useJournalEntryMutations() {
 
   return {
     create: useMutation(async (form: JournalEntryForm) => {
-      const r = await svc.create(form, generateRequestId())
+      const r = await svc.create(form, generateIdempotencyKey())
       bust()
       return r
     }),
     post: useMutation(async (id: number) => {
-      const r = await svc.post(id, generateRequestId())
+      const r = await svc.post(id, generateIdempotencyKey())
       bust()
       return r
     }),
     reverse: useMutation(async (id: number) => {
-      const r = await svc.reverse(id, generateRequestId())
+      const r = await svc.reverse(id, generateIdempotencyKey())
       bust()
       return r
     }),
@@ -81,9 +81,9 @@ export function useJournalEntries() {
     entries, loading, meta,
     fetchEntries,
     getEntry:     (id: number) => svc.get(id),
-    createEntry:  (f: JournalEntryForm) => svc.create(f, generateRequestId()),
-    postEntry:    (id: number) => svc.post(id, generateRequestId()),
-    reverseEntry: (id: number) => svc.reverse(id, generateRequestId()),
+    createEntry:  (f: JournalEntryForm) => svc.create(f, generateIdempotencyKey()),
+    postEntry:    (id: number) => svc.post(id, generateIdempotencyKey()),
+    reverseEntry: (id: number) => svc.reverse(id, generateIdempotencyKey()),
     deleteEntry:  (id: number) => svc.remove(id),
   }
 }

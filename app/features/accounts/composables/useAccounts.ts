@@ -1,7 +1,7 @@
 import type { Account } from '~/shared/types/accounting'
 import { accountService, type AccountListParams } from '~/features/accounts/services/accountService'
 import { invalidateQuery, useMutation, useQuery } from '~/core/api/query'
-import { generateRequestId } from '~/core/api/requestId'
+import { generateIdempotencyKey } from '~/core/api/requestId'
 
 export function useAccountsList(params: Ref<AccountListParams> | ComputedRef<AccountListParams>) {
   const svc = accountService()
@@ -22,7 +22,7 @@ export function useAccountMutations() {
 
   return {
     create: useMutation(async (form: Partial<Account>) => {
-      const r = await svc.create(form, generateRequestId())
+      const r = await svc.create(form, generateIdempotencyKey())
       bust()
       return r
     }),
@@ -67,7 +67,7 @@ export function useAccounts() {
   return {
     accounts, tree, loading,
     fetchTree, fetchAccounts,
-    createAccount: (f: Partial<Account>) => svc.create(f, generateRequestId()),
+    createAccount: (f: Partial<Account>) => svc.create(f, generateIdempotencyKey()),
     updateAccount: (id: number, f: Partial<Account>) => svc.update(id, f),
     deleteAccount: (id: number) => svc.remove(id),
   }

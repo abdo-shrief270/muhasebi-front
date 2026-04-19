@@ -2,6 +2,39 @@ import { defineStore } from 'pinia'
 import type { SubscriptionSnapshot, TenantPlanInfo } from './types'
 import { ENDPOINTS } from '~/core/api/endpoints'
 
+/**
+ * Real `/v1/subscription` response shape (verified 2026-04-19, BACKEND_QUESTIONS 9.1):
+ *   {
+ *     data: {
+ *       plan:    { id, slug, name, price_egp_monthly },
+ *       status:  'active' | 'trialing' | 'past_due' | 'canceled',
+ *       billing_cycle: 'monthly' | 'quarterly' | 'annual',
+ *       current_period_start: string,
+ *       current_period_end:   string,
+ *       trial_ends_at:        string | null,
+ *       auto_renew:           boolean,
+ *       enabled_features:     string[],     // ← NOTE: NOT `features`
+ *       limits:               Record<string, number>,
+ *     }
+ *   }
+ *
+ * We keep our `SubscriptionSnapshot` type stable (plan + features) and map the
+ * shape here.
+ */
+interface RawSubscriptionResponse {
+  data: {
+    plan?: { id: number; slug: string; name: string; price_egp_monthly?: number } | null
+    status?: string
+    billing_cycle?: string
+    current_period_start?: string
+    current_period_end?: string
+    trial_ends_at?: string | null
+    auto_renew?: boolean
+    enabled_features?: string[]
+    limits?: Record<string, number>
+  }
+}
+
 export const useSubscriptionStore = defineStore('subscription', () => {
   const plan = ref<TenantPlanInfo | null>(null)
   const features = ref<readonly string[]>([])
@@ -22,8 +55,13 @@ export const useSubscriptionStore = defineStore('subscription', () => {
   async function fetch() {
     try {
       const api = useApi()
-      const { data } = await api.get<{ data: SubscriptionSnapshot }>(ENDPOINTS.subscription.current)
-      hydrate(data)
+      const raw = await api.get<RawSubscriptionResponse>(ENDPOINTS.subscription.current)
+      hydrate({
+        plan: raw.data.plan
+          ? { slug: raw.data.plan.slug ?? null, name: raw.data.plan.name ?? null }
+          : null,
+        features: raw.data.enabled_features ?? [],
+      })
     } catch {
       // leave defaults; middleware will treat as unprivileged
     }
@@ -36,7 +74,6 @@ export const useSubscriptionStore = defineStore('subscription', () => {
 
   /**
    * Kept for backward compatibility with manifests that still set `plans: [...]`.
-   * Returns true if no constraint is set or if the plan slug is in the list.
    * Real gating is via isFlagEnabled.
    */
   function hasPlan(allowed: readonly string[]): boolean {

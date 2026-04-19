@@ -81,7 +81,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://muhasebi.test/v1',
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'https://api.muhasebi.com/api/v1',
       tenantId: process.env.NUXT_PUBLIC_TENANT_ID || '',
       primaryColor: process.env.NUXT_PUBLIC_PRIMARY_COLOR || '#2c3e50',
       secondaryColor: process.env.NUXT_PUBLIC_SECONDARY_COLOR || '#3498db',

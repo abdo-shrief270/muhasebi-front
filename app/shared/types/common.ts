@@ -13,11 +13,20 @@ export interface ItemResponse<T> {
   data: T
 }
 
+/**
+ * Laravel's pagination meta. Verified against `GET /api/v1/blog` on 2026-04-19.
+ * `links` here is the bootstrap-style page-nav array — DISTINCT from the
+ * top-level `links` on ListResponse which carries first/last/next/prev URLs.
+ */
 export interface ListMeta {
   current_page: number
   per_page: number
   total: number
   last_page: number
+  from?: number | null
+  to?: number | null
+  path?: string
+  links?: Array<{ url: string | null; label: string; page: number | null; active: boolean }>
 }
 
 export interface ListLinks {
@@ -33,8 +42,13 @@ export interface ListResponse<T> {
   links?: ListLinks
 }
 
-/** Laravel-style 422 body. */
+/**
+ * Laravel-style 422 body. Verified against real backend on 2026-04-19
+ * (BACKEND_QUESTIONS 4.2): includes a top-level `error: "validation_error"` slug.
+ * Keys in `errors` use dot-notation for nested array fields ("lines.0.quantity").
+ */
 export interface ApiValidationError {
+  error?: 'validation_error' | string
   message: string
   errors: Record<string, string[]>
 }

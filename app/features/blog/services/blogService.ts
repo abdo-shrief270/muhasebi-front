@@ -1,14 +1,19 @@
 import { ENDPOINTS } from '~/core/api/endpoints'
 import type { BaseListParams, ListResponse, ItemResponse } from '~/shared/types/common'
+import type { BilingualText } from '~/features/marketing/services/marketingService'
 
+/**
+ * Real shape verified against `GET /api/v1/blog` on 2026-04-19.
+ * All user-facing text fields are bilingual (`{ ar, en }`), never plain strings.
+ */
 export interface BlogPost {
   id: number
   slug: string
-  title: string
-  excerpt: string
-  content: string
+  title: BilingualText
+  excerpt: BilingualText
+  content: BilingualText
   cover_image: string | null
-  meta_description: string | null
+  meta_description: BilingualText
   author_name: string | null
   is_published: boolean
   is_featured: boolean
@@ -17,20 +22,22 @@ export interface BlogPost {
   views_count: number
   category?: BlogCategory
   tags?: BlogTag[]
+  created_at?: string
+  updated_at?: string
 }
 
 export interface BlogCategory {
   id: number
   slug: string
-  name: string
-  description?: string
+  name: BilingualText
+  description?: BilingualText
   posts_count?: number
 }
 
 export interface BlogTag {
   id: number
   slug: string
-  name: string
+  name: BilingualText
   posts_count?: number
 }
 

@@ -235,6 +235,7 @@ async function handleSubmit() {
 </script>
 
 <style scoped>
+@reference "~/assets/css/tokens.css";
 .input-field {
   @apply w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all text-sm bg-gray-50/50;
 }

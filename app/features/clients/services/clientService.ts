@@ -53,6 +53,18 @@ export interface PortalInvitePayload {
   send_email?: boolean
 }
 
+export interface PortalUser {
+  id: number
+  name: string
+  email: string
+  /** active = has logged in OR no pending invite; pending = invite sent but not yet redeemed. */
+  status: 'active' | 'pending'
+  last_login_at: string | null
+  /** ISO timestamp; only set for pending users with a live magic-link. */
+  invite_expires_at: string | null
+  created_at: string | null
+}
+
 function toQuery(p: Record<string, unknown>): string {
   const q = new URLSearchParams()
   for (const [k, v] of Object.entries(p)) {
@@ -88,6 +100,22 @@ export function clientService() {
 
     invitePortal: (id: number, payload: PortalInvitePayload, idempotencyKey?: string) =>
       api.post<{ message: string }>(ENDPOINTS.clients.invitePortal(id), payload, { idempotencyKey }),
+
+    /** List portal users + pending invites for a client. */
+    portalUsers: (id: number) =>
+      api.get<{ data: PortalUser[] }>(ENDPOINTS.clients.portalUsers(id)).then(r => r.data ?? []),
+
+    /** Revoke a portal user (soft-delete + token burn). */
+    revokePortalUser: (clientId: number, userId: number) =>
+      api.delete<{ message: string }>(ENDPOINTS.clients.portalUserRevoke(clientId, userId)),
+
+    /** Resend the magic-link invite email; only works for pending users. */
+    resendPortalInvite: (clientId: number, userId: number, idempotencyKey?: string) =>
+      api.post<{ message: string; invite_url: string }>(
+        ENDPOINTS.clients.portalUserResend(clientId, userId),
+        {},
+        { idempotencyKey },
+      ),
 
     /** Bulk import — returns an ImportJobResource; poll /import/{jobId}. */
     importCsv: (file: File, idempotencyKey?: string) => {

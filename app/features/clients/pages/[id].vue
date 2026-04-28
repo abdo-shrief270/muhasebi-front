@@ -491,6 +491,117 @@
                       </template>
                     </UiEmptyState>
                   </div>
+
+                  <!-- Portal-access tab -->
+                  <div
+                    v-if="activeTab === 'portal'"
+                    class="bg-neutral-0 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden"
+                  >
+                    <div class="px-4 py-2.5 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50/60 dark:bg-neutral-950/40 flex items-center justify-between gap-3">
+                      <span class="text-xs text-neutral-500 dark:text-neutral-400 tabular-nums">
+                        {{ portalUsers.length }}
+                        {{ locale === 'ar'
+                          ? (portalUsers.length === 1 ? 'مستخدم' : 'مستخدمون')
+                          : (portalUsers.length === 1 ? 'user' : 'users') }}
+                      </span>
+                      <UiAppButton
+                        variant="primary"
+                        size="sm"
+                        icon="i-lucide-user-plus"
+                        @click="openInviteSlideover"
+                      >
+                        {{ locale === 'ar' ? 'دعوة للبوابة' : 'Invite to portal' }}
+                      </UiAppButton>
+                    </div>
+
+                    <div v-if="portalLoading" class="p-6">
+                      <UiLoadingSkeleton :lines="3" :height="48" />
+                    </div>
+
+                    <ul v-else-if="portalUsers.length > 0" class="divide-y divide-neutral-100 dark:divide-neutral-800/60">
+                      <li
+                        v-for="pu in portalUsers"
+                        :key="pu.id"
+                        class="px-4 py-3 flex items-center justify-between gap-3 hover:bg-neutral-50/60 dark:hover:bg-neutral-800/40 transition-colors"
+                      >
+                        <div class="flex items-center gap-3 min-w-0">
+                          <div
+                            class="w-9 h-9 rounded-md inline-flex items-center justify-center text-xs font-bold flex-shrink-0"
+                            :class="pu.status === 'pending'
+                              ? 'bg-warning-50 dark:bg-warning-500/15 text-warning-700 dark:text-warning-500'
+                              : 'bg-success-50 dark:bg-success-500/15 text-success-700 dark:text-success-400'"
+                          >
+                            {{ pu.name.charAt(0).toUpperCase() }}
+                          </div>
+                          <div class="min-w-0">
+                            <div class="flex items-center gap-2 flex-wrap">
+                              <p class="text-sm font-medium text-neutral-900 dark:text-neutral-0 truncate">
+                                {{ pu.name }}
+                              </p>
+                              <UiBadge :color="pu.status === 'pending' ? 'orange' : 'green'" dot>
+                                {{ pu.status === 'pending'
+                                  ? (locale === 'ar' ? 'بانتظار التفعيل' : 'Pending')
+                                  : (locale === 'ar' ? 'نشط' : 'Active') }}
+                              </UiBadge>
+                            </div>
+                            <p class="text-xs text-neutral-500 dark:text-neutral-400 truncate" dir="ltr">
+                              {{ pu.email }}
+                            </p>
+                            <p class="text-[11px] text-neutral-400 dark:text-neutral-500 mt-0.5 tabular-nums" dir="ltr">
+                              <template v-if="pu.status === 'active' && pu.last_login_at">
+                                {{ locale === 'ar' ? 'آخر دخول' : 'Last login' }}
+                                · {{ formatDateTime(pu.last_login_at) }}
+                              </template>
+                              <template v-else-if="pu.status === 'pending' && pu.invite_expires_at">
+                                {{ locale === 'ar' ? 'تنتهي الدعوة' : 'Invite expires' }}
+                                · {{ formatDateTime(pu.invite_expires_at) }}
+                              </template>
+                              <template v-else>
+                                {{ locale === 'ar' ? 'مدعو في' : 'Invited' }}
+                                · {{ formatDate(pu.created_at) }}
+                              </template>
+                            </p>
+                          </div>
+                        </div>
+
+                        <div class="flex items-center gap-1 flex-shrink-0">
+                          <UiAppButton
+                            v-if="pu.status === 'pending'"
+                            variant="outline"
+                            size="sm"
+                            icon="i-lucide-mail"
+                            :loading="resendingFor === pu.id"
+                            @click="handleResend(pu)"
+                          >
+                            {{ locale === 'ar' ? 'إعادة الإرسال' : 'Resend' }}
+                          </UiAppButton>
+                          <UiAppButton
+                            variant="danger"
+                            size="sm"
+                            icon="i-lucide-user-x"
+                            @click="confirmRevoke(pu)"
+                          >
+                            {{ locale === 'ar' ? 'إلغاء' : 'Revoke' }}
+                          </UiAppButton>
+                        </div>
+                      </li>
+                    </ul>
+
+                    <UiEmptyState
+                      v-else
+                      icon="i-lucide-user-plus"
+                      :title="locale === 'ar' ? 'لم يُدعَ أحد بعد' : 'No portal users yet'"
+                      :description="locale === 'ar'
+                        ? 'ادعُ أحد ممثلي العميل ليتمكن من تسجيل الدخول لبوابة العملاء، عرض فواتيره، ورفع المستندات.'
+                        : 'Invite a contact at this client so they can log in to the client portal, view their invoices, and upload documents.'"
+                    >
+                      <template #action>
+                        <UiAppButton variant="primary" size="sm" icon="i-lucide-user-plus" @click="openInviteSlideover">
+                          {{ locale === 'ar' ? 'دعوة للبوابة' : 'Invite to portal' }}
+                        </UiAppButton>
+                      </template>
+                    </UiEmptyState>
+                  </div>
                 </div>
               </Transition>
             </UiTabs>
@@ -549,6 +660,80 @@
           :loading="removeMutation.loading.value"
           @confirm="handleDelete"
         />
+
+        <!-- Portal-invite SlideOver — collects email + name and sends the
+             magic-link via the existing /clients/{id}/invite-portal flow. -->
+        <UiSlideOver
+          v-model="inviteOpen"
+          :title="locale === 'ar' ? 'دعوة لبوابة العملاء' : 'Invite to Client Portal'"
+        >
+          <form v-if="client" @submit.prevent="submitInvite" class="space-y-4">
+            <p class="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">
+              {{ locale === 'ar'
+                ? `سيتم إرسال رابط دعوة عبر البريد الإلكتروني (صالح لمدة 7 أيام). يحدد المستخدم كلمة المرور الخاصة به عند قبول الدعوة.`
+                : 'A magic-link invitation valid for 7 days will be emailed. The user picks their own password when they accept.' }}
+            </p>
+
+            <div>
+              <label class="ci-label">
+                {{ locale === 'ar' ? 'الاسم الكامل' : 'Full name' }}
+                <span class="text-danger-500">*</span>
+              </label>
+              <input
+                v-model="inviteForm.name"
+                type="text"
+                required
+                maxlength="120"
+                class="ci-input"
+                :placeholder="locale === 'ar' ? 'مثال: أحمد محمود' : 'e.g. Ahmed Mahmoud'"
+              />
+            </div>
+
+            <div>
+              <label class="ci-label">
+                {{ locale === 'ar' ? 'البريد الإلكتروني' : 'Email' }}
+                <span class="text-danger-500">*</span>
+              </label>
+              <input
+                v-model="inviteForm.email"
+                type="email"
+                required
+                maxlength="160"
+                class="ci-input font-mono"
+                dir="ltr"
+                placeholder="user@example.com"
+              />
+            </div>
+
+            <div class="flex gap-2 pt-3 border-t border-neutral-200 dark:border-neutral-800">
+              <UiAppButton
+                type="submit"
+                variant="primary"
+                icon="i-lucide-send"
+                :loading="inviting"
+                :disabled="!inviteForm.email || !inviteForm.name"
+              >
+                {{ locale === 'ar' ? 'إرسال الدعوة' : 'Send invite' }}
+              </UiAppButton>
+              <UiAppButton variant="outline" :disabled="inviting" @click="inviteOpen = false">
+                {{ $t('common.cancel') }}
+              </UiAppButton>
+            </div>
+          </form>
+        </UiSlideOver>
+
+        <UiConfirmModal
+          v-model="revokeOpen"
+          :title="locale === 'ar' ? 'إلغاء وصول البوابة' : 'Revoke portal access'"
+          :description="locale === 'ar'
+            ? 'سيتم تعطيل المستخدم فوراً، وإلغاء جلسته النشطة، وإبطال أي روابط دعوة معلقة. يمكن دعوته مجدداً لاحقاً.'
+            : 'The user will be deactivated immediately, their active session ended, and any pending invite links invalidated. You can re-invite later.'"
+          icon="i-lucide-user-x"
+          variant="danger"
+          :confirm-label="locale === 'ar' ? 'إلغاء الوصول' : 'Revoke access'"
+          :loading="revoking"
+          @confirm="performRevoke"
+        />
       </FeatureBoundary>
   </div>
 </template>
@@ -556,6 +741,7 @@
 <script setup lang="ts">
 import type { ApiError } from '~/core/api/errors'
 import type { ClientProduct, ClientProductForm as ClientProductFormType } from '~/features/clients/services/clientProductService'
+import type { PortalUser } from '~/features/clients/services/clientService'
 
 definePageMeta({ layout: 'dashboard' })
 
@@ -596,6 +782,119 @@ const activeTab = ref('invoices')
 const editOpen = ref(false)
 const deleteConfirmOpen = ref(false)
 
+// ── Portal users (tab) ─────────────────────────────────────────
+//
+// State for the Portal tab — list, invite slideover, revoke confirm,
+// resend action. The list refreshes after every successful mutation so the
+// UI stays in sync without a full page reload.
+const portalUsers = ref<PortalUser[]>([])
+const portalLoading = ref(false)
+const inviteOpen = ref(false)
+const inviting = ref(false)
+const inviteForm = reactive({ name: '', email: '' })
+const revokeOpen = ref(false)
+const revokeTarget = ref<PortalUser | null>(null)
+const revoking = ref(false)
+const resendingFor = ref<number | null>(null)
+
+const { generateIdempotencyKey } = (() => ({
+  generateIdempotencyKey: () => crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+}))()
+
+async function loadPortalUsers() {
+  if (!clientId.value) return
+  portalLoading.value = true
+  try {
+    portalUsers.value = await clientService().portalUsers(clientId.value)
+  } catch {
+    portalUsers.value = []
+  } finally {
+    portalLoading.value = false
+  }
+}
+
+watch(activeTab, (tab) => {
+  // Lazy-load on first time the user opens the Portal tab; subsequent
+  // renders use the cached list until they invite/revoke/resend.
+  if (tab === 'portal' && portalUsers.value.length === 0 && !portalLoading.value) {
+    loadPortalUsers()
+  }
+})
+
+function openInviteSlideover() {
+  // Pre-fill from client.contact_person + client.email so the admin doesn't
+  // have to re-type details that are already on file.
+  inviteForm.name = client.value?.contact_person ?? ''
+  inviteForm.email = client.value?.contact_email ?? client.value?.email ?? ''
+  inviteOpen.value = true
+}
+
+async function submitInvite() {
+  if (!clientId.value || !inviteForm.email || !inviteForm.name) return
+  inviting.value = true
+  try {
+    await clientService().invitePortal(
+      clientId.value,
+      { email: inviteForm.email.trim(), name: inviteForm.name.trim() },
+      generateIdempotencyKey(),
+    )
+    toastStore.success(locale.value === 'ar' ? 'تم إرسال الدعوة' : 'Invite sent')
+    inviteOpen.value = false
+    await loadPortalUsers()
+  } catch (e: unknown) {
+    const err = e as ApiError
+    toastStore.error(err?.message || (locale.value === 'ar' ? 'فشل إرسال الدعوة' : 'Failed to send invite'))
+  } finally {
+    inviting.value = false
+  }
+}
+
+async function handleResend(pu: PortalUser) {
+  if (!clientId.value) return
+  resendingFor.value = pu.id
+  try {
+    await clientService().resendPortalInvite(clientId.value, pu.id, generateIdempotencyKey())
+    toastStore.success(locale.value === 'ar' ? 'تم إعادة إرسال الدعوة' : 'Invite resent')
+    await loadPortalUsers()
+  } catch (e: unknown) {
+    const err = e as ApiError
+    toastStore.error(err?.message || (locale.value === 'ar' ? 'فشل إعادة الإرسال' : 'Resend failed'))
+  } finally {
+    resendingFor.value = null
+  }
+}
+
+function confirmRevoke(pu: PortalUser) {
+  revokeTarget.value = pu
+  revokeOpen.value = true
+}
+
+async function performRevoke() {
+  if (!clientId.value || !revokeTarget.value) return
+  revoking.value = true
+  try {
+    await clientService().revokePortalUser(clientId.value, revokeTarget.value.id)
+    toastStore.success(locale.value === 'ar' ? 'تم إلغاء الوصول' : 'Access revoked')
+    revokeOpen.value = false
+    revokeTarget.value = null
+    await loadPortalUsers()
+  } catch (e: unknown) {
+    const err = e as ApiError
+    toastStore.error(err?.message || (locale.value === 'ar' ? 'فشل الإلغاء' : 'Revoke failed'))
+  } finally {
+    revoking.value = false
+  }
+}
+
+function formatDateTime(iso: string | null | undefined): string {
+  if (!iso) return '—'
+  try {
+    return new Date(iso).toLocaleString(locale.value === 'ar' ? 'ar-EG' : 'en-US', {
+      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+    })
+  } catch { return iso }
+}
+
 const clientInvoices = ref<any[]>([])
 const clientDocuments = ref<any[]>([])
 const api = useApi()
@@ -616,6 +915,7 @@ const tabs = computed(() => [
   { key: 'products',  label: locale.value === 'ar' ? 'المنتجات'    : 'Products',  count: products.value.length,         icon: 'i-lucide-package' },
   { key: 'documents', label: locale.value === 'ar' ? 'المستندات'   : 'Documents', count: clientDocuments.value.length,  icon: 'i-lucide-folder' },
   { key: 'notes',     label: locale.value === 'ar' ? 'ملاحظات'     : 'Notes',                                            icon: 'i-lucide-sticky-note' },
+  { key: 'portal',    label: locale.value === 'ar' ? 'بوابة العميل' : 'Portal',   count: portalUsers.value.length,      icon: 'i-lucide-user-plus' },
 ])
 
 // --- Derived display ---
@@ -790,6 +1090,8 @@ async function handleDelete() {
 </script>
 
 <style scoped>
+@reference "~/assets/css/tokens.css";
+
 .fade-slide-enter-active,
 .fade-slide-leave-active {
   transition: opacity 200ms var(--ease-standard), transform 200ms var(--ease-standard);
@@ -798,5 +1100,30 @@ async function handleDelete() {
 .fade-slide-leave-to {
   opacity: 0;
   transform: translateY(4px);
+}
+
+/* Portal-invite slideover form fields */
+.ci-label { @apply block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5; }
+
+.ci-input {
+  width: 100%;
+  padding-inline: 0.75rem;
+  height: 2.25rem;
+  font-size: 0.875rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-neutral-200);
+  background-color: var(--color-neutral-0, #fff);
+  color: var(--color-neutral-900);
+  outline: none;
+  transition: border-color 150ms var(--ease-standard);
+}
+.ci-input:focus {
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary-500) 20%, transparent);
+}
+:global(html.dark) .ci-input {
+  background-color: var(--color-neutral-900);
+  border-color: var(--color-neutral-800);
+  color: var(--color-neutral-0);
 }
 </style>

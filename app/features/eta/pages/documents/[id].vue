@@ -1,81 +1,182 @@
 <template>
-  <div>
-    <NuxtLayout name="dashboard">
-      <FeatureBoundary id="eta">
-      <template v-if="loading"><UiLoadingSkeleton :lines="8" :height="24" /></template>
+  <FeatureBoundary id="eta">
+    <div class="px-4 lg:px-6 py-5 max-w-[1400px] mx-auto">
+      <template v-if="loading">
+        <UiLoadingSkeleton :lines="8" :height="24" />
+      </template>
 
       <template v-else-if="doc">
-        <div v-motion :initial="{ opacity: 0, y: -10 }" :enter="{ opacity: 1, y: 0 }" class="flex items-start justify-between mb-8">
-          <div class="flex items-center gap-4">
-            <button @click="navigateTo('/eta/documents')" class="text-gray-300 hover:text-gray-500 transition">&#8592;</button>
-            <div>
-              <h1 class="text-2xl font-bold text-gray-800 font-mono">{{ doc.internal_id }}</h1>
+        <!-- Header -->
+        <div class="flex items-start justify-between mb-4">
+          <div class="flex items-center gap-3 min-w-0">
+            <button
+              type="button"
+              class="eta-back"
+              :aria-label="locale === 'ar' ? 'رجوع' : 'Back'"
+              @click="navigateTo('/eta/documents')"
+            >
+              <UIcon name="i-lucide-arrow-left" class="w-4 h-4" />
+            </button>
+            <div class="min-w-0">
+              <h1 class="font-mono text-xl font-bold text-neutral-900 dark:text-neutral-0 truncate">{{ doc.internal_id }}</h1>
               <div class="flex items-center gap-2 mt-1">
                 <UiBadge :color="doc.status_color" dot>{{ locale === 'ar' ? doc.status_label_ar : doc.status_label }}</UiBadge>
-                <span class="text-xs text-gray-400">{{ doc.document_type === 'I' ? (locale === 'ar' ? 'فاتورة' : 'Invoice') : doc.document_type }}</span>
+                <span class="text-xs text-neutral-500 dark:text-neutral-400">
+                  {{ doc.document_type === 'I' ? (locale === 'ar' ? 'فاتورة' : 'Invoice') : doc.document_type }}
+                </span>
               </div>
             </div>
           </div>
-          <div class="flex gap-2">
-            <UiAppButton v-if="doc.status === 'prepared'" variant="primary" size="sm" :loading="actionLoading" @click="handleSubmit">{{ locale === 'ar' ? 'إرسال للضرائب' : 'Submit to ETA' }}</UiAppButton>
-            <UiAppButton v-if="doc.status === 'submitted'" variant="outline" size="sm" :loading="actionLoading" @click="handleCheckStatus">{{ locale === 'ar' ? 'تحقق من الحالة' : 'Check Status' }}</UiAppButton>
-            <UiAppButton v-if="doc.status === 'valid'" variant="danger" size="sm" :loading="actionLoading" @click="cancelOpen = true">{{ locale === 'ar' ? 'إلغاء' : 'Cancel' }}</UiAppButton>
+          <div class="flex gap-2 flex-shrink-0">
+            <UiAppButton
+              v-if="doc.status === 'prepared'"
+              variant="primary"
+              size="sm"
+              icon="i-lucide-send"
+              :loading="actionLoading"
+              @click="handleSubmit"
+            >
+              {{ locale === 'ar' ? 'إرسال للضرائب' : 'Submit to ETA' }}
+            </UiAppButton>
+            <UiAppButton
+              v-if="doc.status === 'submitted'"
+              variant="outline"
+              size="sm"
+              icon="i-lucide-refresh-cw"
+              :loading="actionLoading"
+              @click="handleCheckStatus"
+            >
+              {{ locale === 'ar' ? 'تحقق من الحالة' : 'Check Status' }}
+            </UiAppButton>
+            <UiAppButton
+              v-if="doc.status === 'valid'"
+              variant="danger"
+              size="sm"
+              icon="i-lucide-x-circle"
+              :loading="actionLoading"
+              @click="cancelOpen = true"
+            >
+              {{ locale === 'ar' ? 'إلغاء' : 'Cancel' }}
+            </UiAppButton>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          <div class="lg:col-span-2 space-y-5">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+          <div class="lg:col-span-2 space-y-3">
             <!-- Info -->
-            <div class="bg-white rounded-2xl border border-gray-100/80 p-5">
-              <h3 class="font-semibold text-gray-700 mb-3">{{ locale === 'ar' ? 'تفاصيل المستند' : 'Document Details' }}</h3>
-              <div class="grid grid-cols-2 gap-3 text-sm">
-                <div><span class="text-gray-400">UUID:</span> <span class="font-mono text-xs text-gray-600" dir="ltr">{{ doc.eta_uuid || '-' }}</span></div>
-                <div><span class="text-gray-400">{{ locale === 'ar' ? 'تم الإرسال' : 'Submitted' }}:</span> <span class="text-gray-600">{{ doc.submitted_at ? new Date(doc.submitted_at).toLocaleString() : '-' }}</span></div>
-                <div><span class="text-gray-400">{{ locale === 'ar' ? 'أُنشئ' : 'Created' }}:</span> <span class="text-gray-600">{{ new Date(doc.created_at).toLocaleString() }}</span></div>
-                <div><span class="text-gray-400">{{ locale === 'ar' ? 'الفاتورة' : 'Invoice' }}:</span>
-                  <NuxtLink :to="`/invoices/${doc.invoice_id}`" class="text-secondary-400 hover:underline">{{ doc.internal_id }}</NuxtLink>
+            <div class="bg-neutral-0 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
+              <h3 class="text-sm font-semibold text-neutral-900 dark:text-neutral-0 mb-3 flex items-center gap-1.5">
+                <UIcon name="i-lucide-info" class="w-3.5 h-3.5 text-neutral-400" />
+                {{ locale === 'ar' ? 'تفاصيل المستند' : 'Document Details' }}
+              </h3>
+              <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                <div class="flex items-baseline gap-2 min-w-0">
+                  <dt class="text-xs text-neutral-500 dark:text-neutral-400 flex-shrink-0">UUID:</dt>
+                  <dd class="font-mono text-xs text-neutral-700 dark:text-neutral-200 truncate" dir="ltr">{{ doc.eta_uuid || '—' }}</dd>
                 </div>
-              </div>
+                <div class="flex items-baseline gap-2">
+                  <dt class="text-xs text-neutral-500 dark:text-neutral-400 flex-shrink-0">{{ locale === 'ar' ? 'تم الإرسال:' : 'Submitted:' }}</dt>
+                  <dd class="text-sm text-neutral-700 dark:text-neutral-200 tabular-nums" dir="ltr">{{ doc.submitted_at ? new Date(doc.submitted_at).toLocaleString() : '—' }}</dd>
+                </div>
+                <div class="flex items-baseline gap-2">
+                  <dt class="text-xs text-neutral-500 dark:text-neutral-400 flex-shrink-0">{{ locale === 'ar' ? 'أُنشئ:' : 'Created:' }}</dt>
+                  <dd class="text-sm text-neutral-700 dark:text-neutral-200 tabular-nums" dir="ltr">{{ new Date(doc.created_at).toLocaleString() }}</dd>
+                </div>
+                <div class="flex items-baseline gap-2">
+                  <dt class="text-xs text-neutral-500 dark:text-neutral-400 flex-shrink-0">{{ locale === 'ar' ? 'الفاتورة:' : 'Invoice:' }}</dt>
+                  <dd>
+                    <NuxtLink :to="`/invoices/${doc.invoice_id}`" class="text-sm font-mono text-primary-600 dark:text-primary-400 hover:underline">
+                      {{ doc.internal_id }}
+                    </NuxtLink>
+                  </dd>
+                </div>
+              </dl>
             </div>
 
             <!-- QR Code -->
-            <div v-if="doc.qr_code_data" class="bg-white rounded-2xl border border-gray-100/80 p-5">
-              <h3 class="font-semibold text-gray-700 mb-3">{{ locale === 'ar' ? 'رمز QR' : 'QR Code' }}</h3>
-              <div class="bg-gray-50 rounded-xl p-4 text-center">
-                <p class="font-mono text-xs text-gray-500 break-all" dir="ltr">{{ doc.qr_code_data }}</p>
-                <a :href="doc.qr_code_data" target="_blank" class="text-sm text-secondary-400 hover:underline mt-2 inline-block">{{ locale === 'ar' ? 'فتح الرابط' : 'Open Link' }}</a>
+            <div v-if="doc.qr_code_data" class="bg-neutral-0 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
+              <h3 class="text-sm font-semibold text-neutral-900 dark:text-neutral-0 mb-3 flex items-center gap-1.5">
+                <UIcon name="i-lucide-qr-code" class="w-3.5 h-3.5 text-neutral-400" />
+                {{ locale === 'ar' ? 'رمز QR' : 'QR Code' }}
+              </h3>
+              <div class="bg-neutral-50/60 dark:bg-neutral-950/40 rounded-lg p-3 border border-neutral-100 dark:border-neutral-800/60">
+                <p class="font-mono text-xs text-neutral-600 dark:text-neutral-300 break-all" dir="ltr">{{ doc.qr_code_data }}</p>
+                <a
+                  :href="doc.qr_code_data"
+                  target="_blank"
+                  rel="noopener"
+                  class="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
+                >
+                  {{ locale === 'ar' ? 'فتح الرابط' : 'Open link' }}
+                  <UIcon name="i-lucide-external-link" class="w-3 h-3" />
+                </a>
               </div>
             </div>
 
             <!-- Errors -->
-            <div v-if="doc.errors" class="bg-white rounded-2xl border border-red-100 p-5">
-              <h3 class="font-semibold text-red-600 mb-3">{{ locale === 'ar' ? 'الأخطاء' : 'Errors' }}</h3>
-              <pre class="text-xs text-red-500 bg-red-50 rounded-xl p-4 overflow-auto max-h-60" dir="ltr">{{ JSON.stringify(doc.errors, null, 2) }}</pre>
+            <div
+              v-if="doc.errors"
+              class="bg-neutral-0 dark:bg-neutral-900 rounded-xl border border-danger-200 dark:border-danger-700/40 p-4"
+            >
+              <h3 class="text-sm font-semibold text-danger-700 dark:text-danger-400 mb-2 flex items-center gap-1.5">
+                <UIcon name="i-lucide-alert-triangle" class="w-3.5 h-3.5" />
+                {{ locale === 'ar' ? 'الأخطاء' : 'Errors' }}
+              </h3>
+              <pre class="text-xs text-danger-700 dark:text-danger-300 bg-danger-50/60 dark:bg-danger-500/10 rounded-lg p-3 overflow-auto max-h-60 leading-relaxed" dir="ltr">{{ JSON.stringify(doc.errors, null, 2) }}</pre>
             </div>
 
             <!-- JSON Preview -->
-            <div class="bg-white rounded-2xl border border-gray-100/80 p-5">
+            <div class="bg-neutral-0 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
               <div class="flex items-center justify-between mb-3">
-                <h3 class="font-semibold text-gray-700">{{ locale === 'ar' ? 'بيانات المستند' : 'Document JSON' }}</h3>
-                <button @click="jsonExpanded = !jsonExpanded" class="text-xs text-secondary-400">{{ jsonExpanded ? (locale === 'ar' ? 'طي' : 'Collapse') : (locale === 'ar' ? 'عرض' : 'Expand') }}</button>
+                <h3 class="text-sm font-semibold text-neutral-900 dark:text-neutral-0 flex items-center gap-1.5">
+                  <UIcon name="i-lucide-braces" class="w-3.5 h-3.5 text-neutral-400" />
+                  {{ locale === 'ar' ? 'بيانات المستند' : 'Document JSON' }}
+                </h3>
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1 text-xs font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
+                  @click="jsonExpanded = !jsonExpanded"
+                >
+                  <UIcon :name="jsonExpanded ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" class="w-3.5 h-3.5" />
+                  {{ jsonExpanded ? (locale === 'ar' ? 'طي' : 'Collapse') : (locale === 'ar' ? 'عرض' : 'Expand') }}
+                </button>
               </div>
-              <pre v-if="jsonExpanded" class="text-xs text-gray-600 bg-gray-50 rounded-xl p-4 overflow-auto max-h-96" dir="ltr">{{ JSON.stringify(doc.eta_response || doc.document_data, null, 2) }}</pre>
+              <pre
+                v-if="jsonExpanded"
+                class="text-xs text-neutral-700 dark:text-neutral-200 bg-neutral-50/60 dark:bg-neutral-950/40 rounded-lg p-3 overflow-auto max-h-96 leading-relaxed"
+                dir="ltr"
+              >{{ JSON.stringify(doc.eta_response || doc.document_data, null, 2) }}</pre>
             </div>
           </div>
 
           <!-- Timeline -->
           <div>
-            <div class="bg-white rounded-2xl border border-gray-100/80 p-5">
-              <h3 class="font-semibold text-gray-700 mb-4">{{ locale === 'ar' ? 'المراحل' : 'Timeline' }}</h3>
-              <div class="space-y-4">
-                <div v-for="step in timeline" :key="step.label" class="flex items-center gap-3">
-                  <div class="w-3 h-3 rounded-full flex-shrink-0" :class="step.active ? 'bg-emerald-500' : 'bg-gray-200'"></div>
-                  <div>
-                    <p class="text-sm" :class="step.active ? 'text-gray-800 font-medium' : 'text-gray-400'">{{ step.label }}</p>
-                    <p v-if="step.date" class="text-[10px] text-gray-400">{{ step.date }}</p>
+            <div class="bg-neutral-0 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
+              <h3 class="text-sm font-semibold text-neutral-900 dark:text-neutral-0 mb-4 flex items-center gap-1.5">
+                <UIcon name="i-lucide-list-checks" class="w-3.5 h-3.5 text-neutral-400" />
+                {{ locale === 'ar' ? 'المراحل' : 'Timeline' }}
+              </h3>
+              <ol class="space-y-3">
+                <li v-for="step in timeline" :key="step.label" class="flex items-start gap-3">
+                  <div
+                    class="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1.5"
+                    :class="step.active
+                      ? 'bg-success-500 dark:bg-success-400'
+                      : 'bg-neutral-200 dark:bg-neutral-700'"
+                  ></div>
+                  <div class="min-w-0">
+                    <p
+                      class="text-sm"
+                      :class="step.active
+                        ? 'font-medium text-neutral-900 dark:text-neutral-0'
+                        : 'text-neutral-500 dark:text-neutral-400'"
+                    >
+                      {{ step.label }}
+                    </p>
+                    <p v-if="step.date" class="text-[10px] text-neutral-500 dark:text-neutral-400 tabular-nums" dir="ltr">{{ step.date }}</p>
                   </div>
-                </div>
-              </div>
+                </li>
+              </ol>
             </div>
           </div>
         </div>
@@ -84,21 +185,20 @@
         <UiConfirmModal
           v-model="cancelOpen"
           :title="locale === 'ar' ? 'إلغاء المستند' : 'Cancel Document'"
-          :description="locale === 'ar' ? 'سيتم إلغاء المستند في مصلحة الضرائب' : 'This will cancel the document at ETA'"
-          icon="⚠️"
+          :description="locale === 'ar' ? 'سيتم إلغاء المستند في مصلحة الضرائب ولا يمكن التراجع.' : 'This will cancel the document at ETA and cannot be undone.'"
+          icon="i-lucide-alert-triangle"
           variant="danger"
           :confirm-label="locale === 'ar' ? 'إلغاء المستند' : 'Cancel Document'"
           :loading="actionLoading"
           @confirm="handleCancel"
         />
       </template>
-      </FeatureBoundary>
-    </NuxtLayout>
-  </div>
+    </div>
+  </FeatureBoundary>
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: false })
+definePageMeta({ layout: 'dashboard' })
 const { locale } = useI18n()
 const route = useRoute()
 const api = useApi()
@@ -161,7 +261,6 @@ async function handleCancel() {
   finally { actionLoading.value = false }
 }
 
-// Auto-poll for submitted documents
 let pollInterval: ReturnType<typeof setInterval> | null = null
 watch(() => doc.value?.status, (status) => {
   if (pollInterval) clearInterval(pollInterval)
@@ -174,10 +273,40 @@ watch(() => doc.value?.status, (status) => {
           toastStore.info(`Status: ${doc.value.status}`)
         }
       } catch { /* ignore */ }
-    }, 30000) // 30 seconds
+    }, 30000)
   }
 })
 
 onMounted(loadDoc)
 onUnmounted(() => { if (pollInterval) clearInterval(pollInterval) })
 </script>
+
+<style scoped>
+@reference "~/assets/css/tokens.css";
+
+.eta-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-neutral-200);
+  background-color: var(--color-neutral-0, #fff);
+  color: var(--color-neutral-500);
+  transition: color 150ms var(--ease-standard), border-color 150ms var(--ease-standard);
+}
+.eta-back:hover {
+  color: var(--color-neutral-900);
+  border-color: var(--color-neutral-300);
+}
+:global(html.dark) .eta-back {
+  background-color: var(--color-neutral-900);
+  border-color: var(--color-neutral-800);
+  color: var(--color-neutral-400);
+}
+:global(html.dark) .eta-back:hover {
+  color: var(--color-neutral-0);
+  border-color: var(--color-neutral-700);
+}
+</style>

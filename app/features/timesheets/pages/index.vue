@@ -1,14 +1,17 @@
 <template>
-  <div>
-    <NuxtLayout name="dashboard">
-      <FeatureBoundary id="timesheets">
-      <UiPageHeader :title="$t('nav.timesheets')">
+  <FeatureBoundary id="timesheets">
+    <div class="px-4 lg:px-6 py-5 max-w-[1400px] mx-auto">
+      <UiPageHeader
+        icon="i-lucide-clock"
+        :title="$t('nav.timesheets')"
+        :subtitle="locale === 'ar' ? 'سجل الساعات والاعتمادات' : 'Time entries and approvals'"
+      >
         <template #actions>
-          <UiAppButton variant="outline" size="sm" @click="navigateTo('/timesheets/summary')">
+          <UiAppButton variant="outline" size="sm" icon="i-lucide-bar-chart-2" @click="navigateTo('/timesheets/summary')">
             {{ locale === 'ar' ? 'ملخص' : 'Summary' }}
           </UiAppButton>
-          <UiAppButton variant="primary" @click="createOpen = true">
-            {{ locale === 'ar' ? '+ قيد جديد' : '+ New Entry' }}
+          <UiAppButton variant="primary" size="sm" icon="i-lucide-plus" @click="createOpen = true">
+            {{ locale === 'ar' ? 'قيد جديد' : 'New Entry' }}
           </UiAppButton>
         </template>
       </UiPageHeader>
@@ -19,32 +22,48 @@
         :loading="loading"
         :current-page="meta.current_page"
         :total-pages="meta.last_page"
-        :empty-title="locale === 'ar' ? 'لا توجد قيود' : 'No timesheet entries'"
+        empty-icon="i-lucide-clock"
+        :empty-title="locale === 'ar' ? 'لا توجد قيود وقت' : 'No timesheet entries yet'"
+        :empty-description="locale === 'ar' ? 'سجّل قيداً يدوياً أو ابدأ المؤقت من /timesheets/timer.' : 'Create an entry manually, or start the live timer from /timesheets/timer.'"
         @page-change="(p) => { page = p; load() }"
       >
         <template #header>
-          <UiSearchInput v-model="search" class="flex-1 min-w-[200px]" @update:model-value="debouncedLoad" />
-          <UiFilterDropdown v-model="statusFilter" :options="statusOptions" :all-label="$t('common.all')" @update:model-value="load" />
+          <div class="flex items-center gap-2 flex-1 flex-wrap min-w-0">
+            <UiSearchInput
+              v-model="search"
+              class="flex-1 min-w-[200px] max-w-xs"
+              :placeholder="locale === 'ar' ? 'بحث في الأوصاف...' : 'Search descriptions...'"
+              @update:model-value="debouncedLoad"
+            />
+            <UiFilterDropdown
+              v-model="statusFilter"
+              :options="statusOptions"
+              :all-label="locale === 'ar' ? 'كل الحالات' : 'All statuses'"
+              @update:model-value="load"
+            />
+          </div>
         </template>
 
         <template #cell-date="{ value }">
-          <span class="text-sm text-gray-600">{{ value }}</span>
+          <span class="text-sm text-neutral-700 dark:text-neutral-200 tabular-nums" dir="ltr">{{ formatDate(value) }}</span>
         </template>
 
         <template #cell-task_description="{ row }">
-          <div>
-            <p class="text-gray-700">{{ row.task_description }}</p>
-            <p v-if="row.client" class="text-xs text-gray-400">{{ row.client.name }}</p>
+          <div class="min-w-0">
+            <p class="text-sm text-neutral-900 dark:text-neutral-0 truncate">{{ row.task_description || '—' }}</p>
+            <p v-if="row.client" class="text-[11px] text-neutral-500 dark:text-neutral-400 truncate">{{ row.client.name }}</p>
           </div>
         </template>
 
         <template #cell-hours="{ value }">
-          <span class="font-mono font-medium" dir="ltr">{{ value }}h</span>
+          <span class="font-mono text-sm font-semibold tabular-nums text-neutral-900 dark:text-neutral-0" dir="ltr">{{ value }}h</span>
         </template>
 
         <template #cell-is_billable="{ row }">
           <UiBadge :color="row.is_billable ? 'green' : 'gray'">
-            {{ row.is_billable ? (locale === 'ar' ? 'قابل للفوترة' : 'Billable') : (locale === 'ar' ? 'غير قابل' : 'Non-billable') }}
+            {{ row.is_billable
+              ? (locale === 'ar' ? 'قابل للفوترة' : 'Billable')
+              : (locale === 'ar' ? 'غير قابل' : 'Non-billable') }}
           </UiBadge>
         </template>
 
@@ -55,69 +74,121 @@
         </template>
 
         <template #cell-actions="{ row }">
-          <div class="flex items-center gap-1" @click.stop>
-            <UiAppButton v-if="row.status === 'draft'" variant="ghost" size="sm" @click="handleSubmit(row.id)">
-              {{ locale === 'ar' ? 'تقديم' : 'Submit' }}
-            </UiAppButton>
-            <UiAppButton v-if="row.status === 'submitted'" variant="ghost" size="sm" @click="handleApprove(row.id)">
-              {{ locale === 'ar' ? 'اعتماد' : 'Approve' }}
-            </UiAppButton>
-            <UiAppButton v-if="row.status === 'submitted'" variant="ghost" size="sm" class="text-red-500" @click="openReject(row.id)">
-              {{ locale === 'ar' ? 'رفض' : 'Reject' }}
-            </UiAppButton>
+          <div class="flex items-center justify-end gap-0.5" @click.stop>
+            <button
+              v-if="row.status === 'draft'"
+              type="button"
+              class="w-7 h-7 inline-flex items-center justify-center rounded-md text-neutral-400 hover:text-primary-600 hover:bg-primary-500/10 transition-colors"
+              :title="locale === 'ar' ? 'تقديم' : 'Submit'"
+              @click="handleSubmit(row.id)"
+            >
+              <UIcon name="i-lucide-send" class="w-3.5 h-3.5" />
+            </button>
+            <button
+              v-if="row.status === 'submitted'"
+              type="button"
+              class="w-7 h-7 inline-flex items-center justify-center rounded-md text-neutral-400 hover:text-success-600 hover:bg-success-500/10 transition-colors"
+              :title="locale === 'ar' ? 'اعتماد' : 'Approve'"
+              @click="handleApprove(row.id)"
+            >
+              <UIcon name="i-lucide-check" class="w-3.5 h-3.5" />
+            </button>
+            <button
+              v-if="row.status === 'submitted'"
+              type="button"
+              class="w-7 h-7 inline-flex items-center justify-center rounded-md text-neutral-400 hover:text-danger-600 hover:bg-danger-500/10 transition-colors"
+              :title="locale === 'ar' ? 'رفض' : 'Reject'"
+              @click="openReject(row.id)"
+            >
+              <UIcon name="i-lucide-x" class="w-3.5 h-3.5" />
+            </button>
           </div>
         </template>
       </UiDataTable>
 
-      <!-- Reject modal -->
+      <!-- Reject confirm -->
       <UiConfirmModal
         v-model="rejectOpen"
         :title="locale === 'ar' ? 'رفض القيد' : 'Reject Entry'"
-        :description="locale === 'ar' ? 'أدخل سبب الرفض' : 'Enter rejection reason'"
-        icon="⚠️"
+        :description="locale === 'ar' ? 'لن يُحتسب هذا القيد ضمن ساعات العمل.' : 'This entry will not count toward billable hours.'"
+        icon="i-lucide-x-circle"
         variant="danger"
         :confirm-label="locale === 'ar' ? 'رفض' : 'Reject'"
         @confirm="handleReject"
       />
 
-      <!-- Create SlideOver -->
+      <!-- Create slideover -->
       <UiSlideOver v-model="createOpen" :title="locale === 'ar' ? 'قيد زمني جديد' : 'New Timesheet Entry'">
-        <form @submit.prevent="handleCreate" class="space-y-4">
+        <form @submit.prevent="handleCreate" class="space-y-3">
           <div>
-            <label class="form-label">{{ locale === 'ar' ? 'التاريخ' : 'Date' }} *</label>
-            <input v-model="form.date" type="date" required class="input-field" />
+            <label class="ts-label">
+              {{ locale === 'ar' ? 'التاريخ' : 'Date' }}
+              <span class="text-danger-500">*</span>
+            </label>
+            <input v-model="form.date" type="date" required class="ts-input" />
           </div>
           <div>
-            <label class="form-label">{{ locale === 'ar' ? 'وصف المهمة' : 'Task Description' }} *</label>
-            <input v-model="form.task_description" type="text" required class="input-field" />
+            <label class="ts-label">
+              {{ locale === 'ar' ? 'وصف المهمة' : 'Task Description' }}
+              <span class="text-danger-500">*</span>
+            </label>
+            <input
+              v-model="form.task_description"
+              type="text"
+              required
+              class="ts-input"
+              :placeholder="locale === 'ar' ? 'ما الذي عملت عليه؟' : 'What did you work on?'"
+            />
           </div>
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="form-label">{{ locale === 'ar' ? 'الساعات' : 'Hours' }} *</label>
-              <input v-model="form.hours" type="number" step="0.25" min="0.25" max="24" required class="input-field font-mono" dir="ltr" />
+              <label class="ts-label">
+                {{ locale === 'ar' ? 'الساعات' : 'Hours' }}
+                <span class="text-danger-500">*</span>
+              </label>
+              <input
+                v-model.number="form.hours"
+                type="number"
+                step="0.25"
+                min="0.25"
+                max="24"
+                required
+                class="ts-input font-mono text-end"
+                dir="ltr"
+              />
             </div>
             <div>
-              <label class="form-label">{{ locale === 'ar' ? 'السعر/ساعة' : 'Hourly Rate' }}</label>
-              <input v-model="form.hourly_rate" type="number" step="0.01" min="0" class="input-field font-mono" dir="ltr" />
+              <label class="ts-label">{{ locale === 'ar' ? 'السعر/ساعة' : 'Hourly Rate' }}</label>
+              <input
+                v-model.number="form.hourly_rate"
+                type="number"
+                step="0.01"
+                min="0"
+                class="ts-input font-mono text-end"
+                dir="ltr"
+              />
             </div>
           </div>
-          <label class="flex items-center gap-2 cursor-pointer">
-            <input v-model="form.is_billable" type="checkbox" class="rounded border-gray-300 text-primary-500 focus:ring-primary-500" />
-            <span class="text-sm text-gray-600">{{ locale === 'ar' ? 'قابل للفوترة' : 'Billable' }}</span>
+          <label class="flex items-center gap-2 py-1 cursor-pointer">
+            <input v-model="form.is_billable" type="checkbox" class="rounded text-primary-500 focus:ring-primary-500" />
+            <span class="text-sm text-neutral-700 dark:text-neutral-200">{{ locale === 'ar' ? 'قابل للفوترة' : 'Billable' }}</span>
           </label>
-          <div class="flex gap-3 pt-4 border-t border-gray-100">
-            <UiAppButton type="submit" variant="primary" :loading="createLoading">{{ $t('common.create') }}</UiAppButton>
-            <UiAppButton variant="outline" @click="createOpen = false">{{ $t('common.cancel') }}</UiAppButton>
+          <div class="flex items-center gap-2 pt-3 border-t border-neutral-200 dark:border-neutral-800">
+            <UiAppButton type="button" variant="outline" class="flex-1" @click="createOpen = false">
+              {{ $t('common.cancel') }}
+            </UiAppButton>
+            <UiAppButton type="submit" variant="primary" icon="i-lucide-plus" :loading="createLoading" class="flex-1">
+              {{ $t('common.create') }}
+            </UiAppButton>
           </div>
         </form>
       </UiSlideOver>
-      </FeatureBoundary>
-    </NuxtLayout>
-  </div>
+    </div>
+  </FeatureBoundary>
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: false })
+definePageMeta({ layout: 'dashboard' })
 const { locale } = useI18n()
 const api = useApi()
 const toastStore = useToastStore()
@@ -210,6 +281,29 @@ onMounted(load)
 
 <style scoped>
 @reference "~/assets/css/tokens.css";
-.input-field { @apply w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all text-sm bg-gray-50/50; }
-.form-label { @apply block text-sm font-medium text-gray-600 mb-1; }
+
+.ts-label { @apply block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5; }
+
+.ts-input {
+  width: 100%;
+  padding-inline: 0.75rem;
+  height: 2.25rem;
+  font-size: 0.875rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-neutral-200);
+  background-color: var(--color-neutral-0, #fff);
+  color: var(--color-neutral-900);
+  outline: none;
+  transition: border-color 150ms var(--ease-standard);
+  appearance: none;
+}
+.ts-input:focus {
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary-500) 20%, transparent);
+}
+:global(html.dark) .ts-input {
+  background-color: var(--color-neutral-900);
+  border-color: var(--color-neutral-800);
+  color: var(--color-neutral-0);
+}
 </style>

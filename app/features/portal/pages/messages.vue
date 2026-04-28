@@ -1,6 +1,5 @@
 <template>
   <div>
-    <NuxtLayout name="portal">
       <UiPageHeader :title="locale === 'ar' ? 'الرسائل' : 'Messages'">
         <template #actions>
           <UiAppButton variant="primary" size="sm" @click="composeOpen = true">
@@ -68,12 +67,11 @@
           <div class="text-sm text-gray-700 whitespace-pre-line leading-relaxed">{{ selectedMsg.body }}</div>
         </div>
       </UiSlideOver>
-    </NuxtLayout>
   </div>
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: false })
+definePageMeta({ layout: 'portal' })
 const { locale } = useI18n()
 const api = useApi()
 const toastStore = useToastStore()

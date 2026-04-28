@@ -1,30 +1,31 @@
 <template>
-  <div>
-    <NuxtLayout name="dashboard">
-      <FeatureBoundary id="settings">
+  <FeatureBoundary id="settings">
+    <div class="px-4 lg:px-6 py-5 max-w-3xl mx-auto">
       <UiPageHeader
+        icon="i-lucide-settings"
         :title="$t('nav.settings')"
         :subtitle="locale === 'ar' ? 'إعدادات الحساب والتفضيلات' : 'Account settings and preferences'"
       />
 
-      <div class="max-w-2xl space-y-6">
+      <div class="space-y-3">
         <!-- Profile -->
         <div
           v-motion
           :initial="{ opacity: 0, y: 15 }"
           :enter="{ opacity: 1, y: 0, transition: { delay: 100 } }"
-          class="bg-white rounded-2xl border border-gray-100/80 p-6"
+          class="bg-neutral-0 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-5"
         >
-          <h3 class="font-semibold text-gray-700 mb-4">
+          <h3 class="text-sm font-semibold text-neutral-900 dark:text-neutral-0 mb-4 flex items-center gap-1.5">
+            <UIcon name="i-lucide-user" class="w-3.5 h-3.5 text-neutral-400" />
             {{ locale === 'ar' ? 'الملف الشخصي' : 'Profile' }}
           </h3>
-          <div class="flex items-center gap-4 mb-6">
-            <div class="w-16 h-16 bg-primary-100 rounded-2xl flex items-center justify-center">
-              <span class="text-primary-500 font-bold text-2xl">{{ authStore.user?.name?.charAt(0) }}</span>
+          <div class="flex items-center gap-3 mb-5">
+            <div class="w-12 h-12 bg-primary-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
+              <span class="text-primary-700 dark:text-primary-400 font-bold text-lg">{{ authStore.user?.name?.charAt(0)?.toUpperCase() }}</span>
             </div>
-            <div>
-              <p class="font-semibold text-gray-800">{{ authStore.user?.name }}</p>
-              <p class="text-sm text-gray-400">{{ authStore.user?.email }}</p>
+            <div class="min-w-0">
+              <p class="font-semibold text-neutral-900 dark:text-neutral-0 truncate">{{ authStore.user?.name }}</p>
+              <p class="text-sm text-neutral-500 dark:text-neutral-400 truncate">{{ authStore.user?.email }}</p>
               <UiBadge color="blue" class="mt-1">{{ authStore.user?.role }}</UiBadge>
             </div>
           </div>
@@ -61,14 +62,45 @@
           </form>
         </div>
 
+        <!-- Branding (only for users with manage_landing_page) -->
+        <Can :perm="PERMISSIONS.MANAGE_LANDING_PAGE">
+          <div
+            v-motion
+            :initial="{ opacity: 0, y: 15 }"
+            :enter="{ opacity: 1, y: 0, transition: { delay: 150 } }"
+            class="bg-neutral-0 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-5"
+          >
+            <NuxtLink
+              to="/settings/customization"
+              class="flex items-start justify-between gap-3 group -m-1 p-1 rounded-md hover:bg-neutral-50/60 dark:hover:bg-neutral-800/40 transition-colors"
+            >
+              <div class="flex items-start gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-md bg-purple-500/10 text-purple-700 dark:text-purple-400 inline-flex items-center justify-center flex-shrink-0">
+                  <UIcon name="i-lucide-palette" class="w-4 h-4" />
+                </div>
+                <div class="min-w-0">
+                  <h3 class="text-sm font-semibold text-neutral-900 dark:text-neutral-0 mb-0.5">
+                    {{ locale === 'ar' ? 'التخصيص والهوية' : 'Branding & Customization' }}
+                  </h3>
+                  <p class="text-xs text-neutral-500 dark:text-neutral-400">
+                    {{ locale === 'ar' ? 'ألوان العلامة التجارية والشعار وصفحة الهبوط العامة.' : 'Brand colors, logo, and public landing page.' }}
+                  </p>
+                </div>
+              </div>
+              <UIcon name="i-lucide-arrow-up-right" class="w-3.5 h-3.5 text-neutral-300 dark:text-neutral-600 group-hover:text-primary-500 rtl:rotate-90 transition-colors flex-shrink-0 mt-1" />
+            </NuxtLink>
+          </div>
+        </Can>
+
         <!-- Preferences -->
         <div
           v-motion
           :initial="{ opacity: 0, y: 15 }"
           :enter="{ opacity: 1, y: 0, transition: { delay: 200 } }"
-          class="bg-white rounded-2xl border border-gray-100/80 p-6"
+          class="bg-neutral-0 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-5"
         >
-          <h3 class="font-semibold text-gray-700 mb-4">
+          <h3 class="text-sm font-semibold text-neutral-900 dark:text-neutral-0 mb-4 flex items-center gap-1.5">
+            <UIcon name="i-lucide-sliders-horizontal" class="w-3.5 h-3.5 text-neutral-400" />
             {{ locale === 'ar' ? 'التفضيلات' : 'Preferences' }}
           </h3>
 
@@ -103,9 +135,10 @@
           v-motion
           :initial="{ opacity: 0, y: 15 }"
           :enter="{ opacity: 1, y: 0, transition: { delay: 300 } }"
-          class="bg-white rounded-2xl border border-gray-100/80 p-6"
+          class="bg-neutral-0 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-5"
         >
-          <h3 class="font-semibold text-gray-700 mb-4">
+          <h3 class="text-sm font-semibold text-neutral-900 dark:text-neutral-0 mb-4 flex items-center gap-1.5">
+            <UIcon name="i-lucide-key-round" class="w-3.5 h-3.5 text-neutral-400" />
             {{ locale === 'ar' ? 'تغيير كلمة المرور' : 'Change Password' }}
           </h3>
 
@@ -164,22 +197,24 @@
           v-motion
           :initial="{ opacity: 0, y: 15 }"
           :enter="{ opacity: 1, y: 0, transition: { delay: 400 } }"
-          class="bg-white rounded-2xl border border-red-100/80 p-6"
+          class="bg-danger-500/5 dark:bg-danger-500/10 rounded-xl border border-danger-500/20 p-5"
         >
-          <h3 class="font-semibold text-red-600 mb-2">
+          <h3 class="text-sm font-semibold text-danger-700 dark:text-danger-400 mb-1 flex items-center gap-1.5">
+            <UIcon name="i-lucide-shield-alert" class="w-3.5 h-3.5" />
             {{ locale === 'ar' ? 'منطقة الخطر' : 'Danger Zone' }}
           </h3>
-          <p class="text-sm text-gray-400 mb-4">
-            {{ locale === 'ar' ? 'تسجيل الخروج من جميع الأجهزة' : 'Logout from all devices' }}
+          <p class="text-xs text-neutral-500 dark:text-neutral-400 mb-3">
+            {{ locale === 'ar'
+              ? 'سيؤدي ذلك إلى تسجيل الخروج من جميع الأجهزة وإلغاء كل الجلسات النشطة.'
+              : 'This signs you out everywhere and revokes all active sessions.' }}
           </p>
-          <UiAppButton variant="danger" size="sm" @click="logoutAll">
-            {{ locale === 'ar' ? 'تسجيل الخروج من الكل' : 'Logout All Sessions' }}
+          <UiAppButton variant="danger" size="sm" icon="i-lucide-log-out" @click="logoutAll">
+            {{ locale === 'ar' ? 'تسجيل الخروج من جميع الأجهزة' : 'Logout All Sessions' }}
           </UiAppButton>
         </div>
       </div>
-      </FeatureBoundary>
-    </NuxtLayout>
-  </div>
+    </div>
+  </FeatureBoundary>
 </template>
 
 <script setup lang="ts">
@@ -189,8 +224,10 @@ import {
   passwordChangeDefaults, passwordChangeSchema, type PasswordChangeInput,
 } from '~/features/settings/schemas'
 import type { ApiError } from '~/core/api/errors'
+import Can from '~/core/rbac/Can.vue'
+import { PERMISSIONS } from '~/core/rbac/permissions'
 
-definePageMeta({ layout: false })
+definePageMeta({ layout: 'dashboard' })
 
 const { locale, setLocale } = useI18n()
 const authStore = useAuthStore()
@@ -269,8 +306,32 @@ async function logoutAll() {
 
 <style scoped>
 @reference "~/assets/css/tokens.css";
-.input-field { @apply w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all text-sm bg-gray-50/50; }
-.input-error { @apply border-red-300 focus:ring-red-500/20 focus:border-red-500; }
-.form-label { @apply block text-sm font-medium text-gray-600 mb-1; }
-.form-error { @apply mt-1 text-xs text-red-500; }
+
+.form-label { @apply block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5; }
+.form-error { @apply mt-1 text-xs text-danger-600 dark:text-danger-500; }
+
+.input-field {
+  width: 100%;
+  padding-inline: 0.75rem;
+  height: 2.25rem;
+  font-size: 0.875rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-neutral-200);
+  background-color: var(--color-neutral-0, #fff);
+  color: var(--color-neutral-900);
+  outline: none;
+  transition: border-color 150ms var(--ease-standard);
+  appearance: none;
+}
+.input-field:focus {
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary-500) 20%, transparent);
+}
+.input-error { border-color: color-mix(in oklab, var(--color-danger-500) 60%, transparent); }
+
+:global(html.dark) .input-field {
+  background-color: var(--color-neutral-900);
+  border-color: var(--color-neutral-800);
+  color: var(--color-neutral-0);
+}
 </style>

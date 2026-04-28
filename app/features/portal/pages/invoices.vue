@@ -1,6 +1,5 @@
 <template>
   <div>
-    <NuxtLayout name="portal">
       <UiPageHeader :title="locale === 'ar' ? 'فواتيري' : 'My Invoices'" />
 
       <UiDataTable
@@ -74,12 +73,11 @@
           </div>
         </div>
       </UiSlideOver>
-    </NuxtLayout>
   </div>
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: false })
+definePageMeta({ layout: 'portal' })
 const { locale } = useI18n()
 const api = useApi()
 const toastStore = useToastStore()

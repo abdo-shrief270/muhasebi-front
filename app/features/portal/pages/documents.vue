@@ -1,6 +1,5 @@
 <template>
   <div>
-    <NuxtLayout name="portal">
       <UiPageHeader :title="locale === 'ar' ? 'المستندات' : 'Documents'">
         <template #actions>
           <UiAppButton variant="primary" size="sm" @click="uploadOpen = true">
@@ -40,12 +39,11 @@
       <UiSlideOver v-model="uploadOpen" :title="locale === 'ar' ? 'رفع مستند' : 'Upload Document'">
         <UiFileUpload :uploading="uploading" @files="handleUpload" />
       </UiSlideOver>
-    </NuxtLayout>
   </div>
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: false })
+definePageMeta({ layout: 'portal' })
 const { locale } = useI18n()
 const api = useApi()
 const config = useRuntimeConfig()

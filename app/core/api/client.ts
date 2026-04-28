@@ -37,12 +37,28 @@ export function useApi() {
     const token = authStore.token || useCookie('auth_token').value || ''
     if (token) headers.Authorization = `Bearer ${token}`
 
-    try {
-      const { locale } = useI18n()
-      headers['Accept-Language'] = locale.value
-    } catch {
-      headers['Accept-Language'] = 'ar'
+    // Locale resolution. We read the cookie that @nuxtjs/i18n persists on
+    // every setLocale() call (cookieKey: 'i18n_locale' in nuxt.config). The
+    // cookie works in any context — Pinia stores, plugins, middleware — where
+    // useI18n() may silently throw. useI18n() is only used as a last-resort
+    // fallback when the cookie hasn't been written yet (very first request
+    // before any locale switch). Default to 'ar' to match defaultLocale.
+    const supported = ['ar', 'en'] as const
+    let lang: 'ar' | 'en' = 'ar'
+    const cookieLang = useCookie<string | null>('i18n_locale').value
+    if (cookieLang && (supported as readonly string[]).includes(cookieLang)) {
+      lang = cookieLang as 'ar' | 'en'
+    } else {
+      try {
+        const { locale } = useI18n()
+        if ((supported as readonly string[]).includes(locale.value)) {
+          lang = locale.value as 'ar' | 'en'
+        }
+      } catch {
+        // keep default
+      }
     }
+    headers['Accept-Language'] = lang
 
     const tz = resolveTimezone(authStore)
     if (tz) headers['X-Timezone'] = tz

@@ -46,6 +46,25 @@ export const useSubscriptionStore = defineStore('subscription', () => {
     loaded.value = true
   }
 
+  /**
+   * Set only the features array. Used by authStore.fetchUser() to hydrate
+   * feature flags from /me.tenant.features.
+   */
+  function setFeatures(enabled: readonly string[]) {
+    features.value = enabled
+    loaded.value = true
+  }
+
+  /**
+   * Set only the plan info. Used by authStore.fetchUser() to hydrate plan
+   * from /me.tenant.plan so manifest `plans: [...]` gates evaluate
+   * correctly without a separate /subscription round-trip.
+   */
+  function setPlan(p: TenantPlanInfo | null) {
+    plan.value = p
+    loaded.value = true
+  }
+
   function reset() {
     plan.value = null
     features.value = []
@@ -82,7 +101,7 @@ export const useSubscriptionStore = defineStore('subscription', () => {
     return allowed.includes(plan.value.slug)
   }
 
-  return { plan, features, loaded, hydrate, reset, fetch, hasPlan, isFlagEnabled }
+  return { plan, features, loaded, hydrate, setFeatures, setPlan, reset, fetch, hasPlan, isFlagEnabled }
 })
 
 export function useSubscription() {

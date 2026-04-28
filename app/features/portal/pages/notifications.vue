@@ -1,6 +1,5 @@
 <template>
   <div>
-    <NuxtLayout name="portal">
       <UiPageHeader :title="locale === 'ar' ? 'الإشعارات' : 'Notifications'">
         <template #actions>
           <UiAppButton v-if="unreadCount > 0" variant="outline" size="sm" @click="markAllRead">
@@ -34,12 +33,11 @@
       </div>
 
       <UiEmptyState v-else icon="🔔" :title="locale === 'ar' ? 'لا توجد إشعارات' : 'No notifications'" />
-    </NuxtLayout>
   </div>
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: false })
+definePageMeta({ layout: 'portal' })
 const { locale } = useI18n()
 const api = useApi()
 

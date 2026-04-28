@@ -1,144 +1,180 @@
 <template>
-  <div>
-    <NuxtLayout name="dashboard">
-      <FeatureBoundary id="invoices">
-      <UiPageHeader :title="locale === 'ar' ? 'فاتورة جديدة' : 'New Invoice'" />
+    <FeatureBoundary id="invoices">
+      <div class="px-4 lg:px-6 py-5 max-w-[1200px] mx-auto">
+        <UiPageHeader
+          icon="i-lucide-file-plus"
+          :title="locale === 'ar' ? 'فاتورة جديدة' : 'New Invoice'"
+          :subtitle="locale === 'ar' ? 'أضف بنود الفاتورة وأرسلها للعميل.' : 'Add line items and send to your client.'"
+          :breadcrumb="[
+            { label: $t('nav.invoices'), to: '/invoices' },
+            { label: locale === 'ar' ? 'فاتورة جديدة' : 'New Invoice' },
+          ]"
+        />
 
-      <div
-        v-motion
-        :initial="{ opacity: 0, y: 15 }"
-        :enter="{ opacity: 1, y: 0 }"
-        class="bg-white rounded-2xl border border-gray-100/80 p-6"
-      >
-        <form @submit.prevent="onSubmit">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div>
-              <label class="form-label">{{ locale === 'ar' ? 'العميل' : 'Client' }} *</label>
-              <select
-                v-model.number="values.client_id"
-                class="input-field"
-                :class="{ 'input-error': errors.client_id }"
-                @change="clearError('client_id')"
-              >
-                <option :value="0" disabled>{{ locale === 'ar' ? 'اختر عميل' : 'Select client' }}</option>
-                <option v-for="c in clients" :key="c.id" :value="c.id">{{ c.name }}</option>
-              </select>
-              <p v-if="errors.client_id" class="form-error">{{ errors.client_id }}</p>
-            </div>
-            <div>
-              <label class="form-label">{{ locale === 'ar' ? 'التاريخ' : 'Date' }} *</label>
-              <input v-model="values.date" type="date" class="input-field" :class="{ 'input-error': errors.date }" @input="clearError('date')" />
-              <p v-if="errors.date" class="form-error">{{ errors.date }}</p>
-            </div>
-            <div>
-              <label class="form-label">{{ locale === 'ar' ? 'تاريخ الاستحقاق' : 'Due Date' }} *</label>
-              <input v-model="values.due_date" type="date" class="input-field" :class="{ 'input-error': errors.due_date }" @input="clearError('due_date')" />
-              <p v-if="errors.due_date" class="form-error">{{ errors.due_date }}</p>
-            </div>
-          </div>
-
-          <div class="border border-gray-100 rounded-xl overflow-hidden mb-1" :class="{ 'border-red-300': errors.lines }">
-            <table class="w-full text-sm">
-              <thead>
-                <tr class="bg-gray-50/80">
-                  <th class="px-4 py-3 text-start text-xs font-semibold text-gray-400 uppercase">{{ locale === 'ar' ? 'الوصف' : 'Description' }}</th>
-                  <th class="px-4 py-3 text-start text-xs font-semibold text-gray-400 uppercase w-[90px]">{{ locale === 'ar' ? 'الكمية' : 'Qty' }}</th>
-                  <th class="px-4 py-3 text-start text-xs font-semibold text-gray-400 uppercase w-[120px]">{{ locale === 'ar' ? 'السعر' : 'Price' }}</th>
-                  <th class="px-4 py-3 text-start text-xs font-semibold text-gray-400 uppercase w-[80px]">{{ locale === 'ar' ? 'خصم %' : 'Disc %' }}</th>
-                  <th class="px-4 py-3 text-start text-xs font-semibold text-gray-400 uppercase w-[80px]">{{ locale === 'ar' ? 'ضريبة %' : 'VAT %' }}</th>
-                  <th class="px-4 py-3 text-start text-xs font-semibold text-gray-400 uppercase w-[120px]">{{ locale === 'ar' ? 'الإجمالي' : 'Total' }}</th>
-                  <th class="w-10"></th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(line, i) in values.lines" :key="i" class="border-t border-gray-50">
-                  <td class="px-3 py-2">
-                    <input v-model="line.description" type="text" class="input-field-sm" :placeholder="locale === 'ar' ? 'وصف البند' : 'Item description'" />
-                  </td>
-                  <td class="px-3 py-2">
-                    <input v-model="line.quantity" type="number" step="0.01" min="0.01" class="input-field-sm font-mono" dir="ltr" />
-                  </td>
-                  <td class="px-3 py-2">
-                    <input v-model="line.unit_price" type="number" step="0.01" min="0" class="input-field-sm font-mono" dir="ltr" />
-                  </td>
-                  <td class="px-3 py-2">
-                    <input v-model="line.discount_percent" type="number" step="0.01" min="0" max="100" class="input-field-sm font-mono" dir="ltr" />
-                  </td>
-                  <td class="px-3 py-2">
-                    <input v-model="line.vat_rate" type="number" step="0.01" min="0" class="input-field-sm font-mono" dir="ltr" />
-                  </td>
-                  <td class="px-3 py-2 font-mono text-sm text-gray-600" dir="ltr">
-                    {{ lineTotal(line).toLocaleString() }}
-                  </td>
-                  <td class="px-2">
-                    <button v-if="values.lines.length > 1" @click="removeLine(i)" type="button" class="text-gray-300 hover:text-red-500 transition">&#10005;</button>
-                  </td>
-                </tr>
-              </tbody>
-              <tfoot>
-                <tr class="border-t border-gray-200">
-                  <td colspan="7" class="px-4 py-3">
-                    <button type="button" @click="addLine" class="text-sm text-secondary-400 hover:text-secondary-500 font-medium">
-                      + {{ locale === 'ar' ? 'إضافة بند' : 'Add line' }}
-                    </button>
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-          <p v-if="errors.lines" class="form-error mb-4">{{ errors.lines }}</p>
-
-          <div
-            v-motion
-            :initial="{ opacity: 0 }"
-            :enter="{ opacity: 1, transition: { delay: 200 } }"
-            class="flex justify-end mb-6"
-          >
-            <div class="w-72 space-y-2 text-sm">
-              <div class="flex justify-between text-gray-500">
-                <span>{{ locale === 'ar' ? 'الإجمالي الفرعي' : 'Subtotal' }}</span>
-                <span class="font-mono" dir="ltr">{{ subtotal.toLocaleString() }}</span>
+        <form @submit.prevent="onSubmit" class="space-y-5">
+          <!-- Client + dates -->
+          <section class="bg-neutral-0 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-5">
+            <h3 class="text-sm font-semibold text-neutral-900 dark:text-neutral-0 mb-4 flex items-center gap-2">
+              <UIcon name="i-lucide-info" class="w-4 h-4 text-neutral-400" />
+              {{ locale === 'ar' ? 'بيانات الفاتورة' : 'Invoice details' }}
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label class="form-label">
+                  {{ locale === 'ar' ? 'العميل' : 'Client' }}
+                  <span class="text-danger-500">*</span>
+                </label>
+                <div class="relative">
+                  <UIcon
+                    name="i-lucide-user"
+                    class="absolute start-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400 pointer-events-none"
+                  />
+                  <select
+                    v-model.number="values.client_id"
+                    class="form-input form-input--leading-icon"
+                    :class="{ 'form-input--error': errors.client_id }"
+                    @change="clearError('client_id')"
+                  >
+                    <option :value="0" disabled>{{ locale === 'ar' ? 'اختر عميلاً' : 'Select a client' }}</option>
+                    <option v-for="c in clients" :key="c.id" :value="c.id">{{ c.name }}</option>
+                  </select>
+                  <UIcon
+                    name="i-lucide-chevron-down"
+                    class="absolute end-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400 pointer-events-none"
+                  />
+                </div>
+                <p v-if="errors.client_id" class="form-error">{{ errors.client_id }}</p>
               </div>
-              <div class="flex justify-between text-gray-500">
-                <span>{{ locale === 'ar' ? 'ضريبة القيمة المضافة' : 'VAT' }}</span>
-                <span class="font-mono" dir="ltr">{{ totalVat.toLocaleString() }}</span>
+              <div>
+                <label class="form-label">
+                  {{ locale === 'ar' ? 'التاريخ' : 'Date' }}
+                  <span class="text-danger-500">*</span>
+                </label>
+                <input
+                  v-model="values.date"
+                  type="date"
+                  class="form-input"
+                  :class="{ 'form-input--error': errors.date }"
+                  @input="clearError('date')"
+                />
+                <p v-if="errors.date" class="form-error">{{ errors.date }}</p>
               </div>
-              <div class="flex justify-between font-bold text-gray-800 text-base pt-2 border-t border-gray-200">
-                <span>{{ $t('common.total') }}</span>
-                <span class="font-mono" dir="ltr">{{ grandTotal.toLocaleString() }} {{ locale === 'ar' ? 'ج.م.' : 'EGP' }}</span>
+              <div>
+                <label class="form-label">
+                  {{ locale === 'ar' ? 'تاريخ الاستحقاق' : 'Due date' }}
+                  <span class="text-danger-500">*</span>
+                </label>
+                <input
+                  v-model="values.due_date"
+                  type="date"
+                  class="form-input"
+                  :class="{ 'form-input--error': errors.due_date }"
+                  @input="clearError('due_date')"
+                />
+                <p v-if="errors.due_date" class="form-error">{{ errors.due_date }}</p>
               </div>
             </div>
-          </div>
+          </section>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div>
-              <label class="form-label">{{ locale === 'ar' ? 'ملاحظات' : 'Notes' }}</label>
-              <textarea v-model="values.notes" rows="3" class="input-field resize-none"></textarea>
-            </div>
-            <div>
-              <label class="form-label">{{ locale === 'ar' ? 'شروط الدفع' : 'Payment Terms' }}</label>
-              <textarea v-model="values.terms" rows="3" class="input-field resize-none"></textarea>
-            </div>
-          </div>
+          <!-- Line items -->
+          <LineItemsEditor
+            v-model="values.lines"
+            :error="errors.lines"
+            :client-id="values.client_id || null"
+          />
 
-          <div class="flex gap-3">
-            <UiAppButton type="submit" variant="primary" :loading="submitting || createMutation.loading.value">
+          <!-- Totals + notes -->
+          <section class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            <!-- Notes (left, span 2) -->
+            <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="bg-neutral-0 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
+                <label class="form-label flex items-center gap-1.5">
+                  <UIcon name="i-lucide-sticky-note" class="w-3.5 h-3.5 text-neutral-400" />
+                  {{ locale === 'ar' ? 'ملاحظات' : 'Notes' }}
+                </label>
+                <textarea
+                  v-model="values.notes"
+                  rows="4"
+                  class="form-input resize-none"
+                  :placeholder="locale === 'ar' ? 'اختياري — تظهر للعميل.' : 'Optional — visible to the client.'"
+                />
+              </div>
+              <div class="bg-neutral-0 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
+                <label class="form-label flex items-center gap-1.5">
+                  <UIcon name="i-lucide-handshake" class="w-3.5 h-3.5 text-neutral-400" />
+                  {{ locale === 'ar' ? 'شروط الدفع' : 'Payment terms' }}
+                </label>
+                <textarea
+                  v-model="values.terms"
+                  rows="4"
+                  class="form-input resize-none"
+                  :placeholder="locale === 'ar' ? 'مثال: الدفع خلال 30 يوماً.' : 'e.g. Net 30, payment within 30 days.'"
+                />
+              </div>
+            </div>
+
+            <!-- Totals card (right) -->
+            <aside
+              v-motion
+              :initial="{ opacity: 0, x: locale === 'ar' ? -8 : 8 }"
+              :enter="{ opacity: 1, x: 0, transition: { delay: 80 } }"
+              class="bg-neutral-0 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-5 h-fit lg:sticky lg:top-16"
+            >
+              <h3 class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-3">
+                {{ locale === 'ar' ? 'ملخص' : 'Summary' }}
+              </h3>
+              <dl class="space-y-2 text-sm">
+                <div class="flex justify-between items-center">
+                  <dt class="text-neutral-500 dark:text-neutral-400">{{ locale === 'ar' ? 'الإجمالي الفرعي' : 'Subtotal' }}</dt>
+                  <dd class="font-mono tabular-nums text-neutral-900 dark:text-neutral-0" dir="ltr">{{ subtotal.toLocaleString() }}</dd>
+                </div>
+                <div class="flex justify-between items-center">
+                  <dt class="text-neutral-500 dark:text-neutral-400">{{ locale === 'ar' ? 'ضريبة القيمة المضافة' : 'VAT' }}</dt>
+                  <dd class="font-mono tabular-nums text-neutral-900 dark:text-neutral-0" dir="ltr">{{ totalVat.toLocaleString() }}</dd>
+                </div>
+                <div class="flex justify-between items-center pt-3 border-t border-neutral-200 dark:border-neutral-800">
+                  <dt class="font-semibold text-neutral-900 dark:text-neutral-0">{{ $t('common.total') }}</dt>
+                  <dd class="font-mono tabular-nums text-base font-bold text-neutral-900 dark:text-neutral-0" dir="ltr">
+                    {{ grandTotal.toLocaleString() }}
+                    <span class="text-xs text-neutral-500 dark:text-neutral-400 ms-1 font-sans">
+                      {{ locale === 'ar' ? 'ج.م.' : 'EGP' }}
+                    </span>
+                  </dd>
+                </div>
+              </dl>
+            </aside>
+          </section>
+
+          <!-- Actions -->
+          <div class="flex items-center justify-end gap-2">
+            <UiAppButton
+              type="button"
+              variant="outline"
+              icon="i-lucide-arrow-left"
+              @click="navigateTo('/invoices')"
+            >
+              {{ $t('common.cancel') }}
+            </UiAppButton>
+            <UiAppButton
+              type="submit"
+              variant="primary"
+              icon="i-lucide-check"
+              :loading="submitting || createMutation.loading.value"
+            >
               {{ locale === 'ar' ? 'إنشاء الفاتورة' : 'Create Invoice' }}
             </UiAppButton>
-            <UiAppButton variant="outline" @click="navigateTo('/invoices')">{{ $t('common.cancel') }}</UiAppButton>
           </div>
         </form>
       </div>
-      </FeatureBoundary>
-    </NuxtLayout>
-  </div>
+    </FeatureBoundary>
 </template>
 
 <script setup lang="ts">
 import { invoiceFormDefaults, invoiceFormSchema, type InvoiceFormInput } from '~/features/invoices/schemas'
+import { sumSubtotal, sumVat, grandTotal as computeGrandTotal } from '~/features/invoices/utils/lineMath'
 import type { ApiError } from '~/core/api/errors'
 
-definePageMeta({ layout: false })
+definePageMeta({ layout: 'dashboard' })
 
 const { locale } = useI18n()
 const route = useRoute()
@@ -157,42 +193,25 @@ const { values, errors, submitting, clearError, handleSubmit, applyApiErrors } =
   },
 })
 
-function addLine() {
-  values.lines.push({ description: '', quantity: 1, unit_price: 0, discount_percent: 0, vat_rate: 14 })
-}
-
-function removeLine(i: number) {
-  values.lines.splice(i, 1)
-}
-
-function lineTotal(line: InvoiceFormInput['lines'][number]) {
-  const qty = Number(line.quantity) || 0
-  const price = Number(line.unit_price) || 0
-  const disc = Number(line.discount_percent) || 0
-  const vat = Number(line.vat_rate) || 0
-  const sub = qty * price * (1 - disc / 100)
-  return Math.round((sub + sub * vat / 100) * 100) / 100
-}
-
-const subtotal = computed(() => values.lines.reduce((sum, l) => {
-  const qty = Number(l.quantity) || 0
-  const price = Number(l.unit_price) || 0
-  const disc = Number(l.discount_percent) || 0
-  return sum + qty * price * (1 - disc / 100)
-}, 0))
-
-const totalVat = computed(() => values.lines.reduce((sum, l) => {
-  const qty = Number(l.quantity) || 0
-  const price = Number(l.unit_price) || 0
-  const disc = Number(l.discount_percent) || 0
-  const vat = Number(l.vat_rate) || 0
-  const sub = qty * price * (1 - disc / 100)
-  return sum + sub * vat / 100
-}, 0))
-
-const grandTotal = computed(() => Math.round((subtotal.value + totalVat.value) * 100) / 100)
+// Aggregates for the summary card. Per-line math lives inside the
+// LineItemsEditor component; the helpers below operate on the full array.
+const subtotal = computed(() => sumSubtotal(values.lines))
+const totalVat = computed(() => sumVat(values.lines))
+const grandTotal = computed(() => computeGrandTotal(values.lines))
 
 async function onSubmit() {
+  // Product-only mode: every line must be linked to a saved client_product.
+  // The line editor surfaces orphans inline, but we also block submission
+  // here so a stale state can't slip past the form-level validation.
+  const orphan = values.lines.findIndex(l => !(l as any).client_product_id)
+  if (orphan !== -1) {
+    errors.lines = locale.value === 'ar'
+      ? `البند رقم ${orphan + 1}: اختر منتجاً لهذا البند.`
+      : `Line ${orphan + 1}: pick a product for this line.`
+    toastStore.error(errors.lines)
+    return
+  }
+
   const result = await handleSubmit(async (data) => {
     await createMutation.mutate(data as any)
   })
@@ -212,9 +231,37 @@ onMounted(() => fetchClients({ per_page: 100 }))
 
 <style scoped>
 @reference "~/assets/css/tokens.css";
-.input-field { @apply w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all text-sm bg-gray-50/50; }
-.input-field-sm { @apply w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all text-sm bg-transparent; }
-.input-error { @apply border-red-300 focus:ring-red-500/20 focus:border-red-500; }
-.form-label { @apply block text-sm font-medium text-gray-600 mb-1; }
-.form-error { @apply mt-1 text-xs text-red-500; }
+
+.form-label { @apply block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5; }
+.form-error { @apply mt-1 text-xs text-danger-600 dark:text-danger-500 flex items-center gap-1; }
+
+.form-input {
+  width: 100%;
+  padding-inline: 0.75rem;
+  height: 2.25rem;
+  font-size: 0.875rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-neutral-200);
+  background-color: var(--color-neutral-0, #fff);
+  color: var(--color-neutral-900);
+  outline: none;
+  transition: border-color 150ms var(--ease-standard);
+  appearance: none;
+}
+.form-input:focus {
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary-500) 20%, transparent);
+}
+textarea.form-input { height: auto; padding-block: 0.5rem; }
+.form-input--leading-icon { padding-inline-start: 2rem; padding-inline-end: 2rem; }
+.form-input--error { border-color: color-mix(in oklab, var(--color-danger-500) 60%, transparent); }
+.form-input--error:focus { border-color: var(--color-danger-500); box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-danger-500) 25%, transparent); }
+
+:global(html.dark) .form-input {
+  background-color: var(--color-neutral-900);
+  border-color: var(--color-neutral-800);
+  color: var(--color-neutral-0);
+}
+
+/* Line-item cell inputs live inside the LineItemsEditor component now. */
 </style>

@@ -1,34 +1,40 @@
 <template>
-  <div>
-    <NuxtLayout name="dashboard">
-      <FeatureBoundary id="journal-entries">
+  <FeatureBoundary id="journal-entries">
+    <div class="px-4 lg:px-6 py-5 max-w-[1400px] mx-auto">
       <template v-if="loading">
         <UiLoadingSkeleton :lines="6" :height="24" />
       </template>
 
       <template v-else-if="entry">
-        <div
-          v-motion
-          :initial="{ opacity: 0, y: -10 }"
-          :enter="{ opacity: 1, y: 0 }"
-          class="flex items-start justify-between mb-8"
-        >
-          <div class="flex items-center gap-4">
-            <button @click="navigateTo('/journal-entries')" class="text-gray-300 hover:text-gray-500 transition">&#8592;</button>
-            <div>
-              <div class="flex items-center gap-3">
-                <h1 class="text-2xl font-bold text-gray-800 font-mono">{{ entry.entry_number }}</h1>
+        <!-- Header -->
+        <div class="flex items-start justify-between mb-4">
+          <div class="flex items-center gap-3 min-w-0">
+            <button
+              class="je-back"
+              :aria-label="locale === 'ar' ? 'رجوع' : 'Back'"
+              @click="navigateTo('/journal-entries')"
+            >
+              <UIcon name="i-lucide-arrow-left" class="w-4 h-4" />
+            </button>
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <h1 class="font-mono text-xl font-bold text-neutral-900 dark:text-neutral-0">{{ entry.entry_number }}</h1>
                 <UiBadge :color="statusColor(entry.status)" dot>{{ statusLabel(entry.status) }}</UiBadge>
               </div>
-              <p class="text-sm text-gray-400 mt-0.5">{{ entry.date }} &middot; {{ entry.description }}</p>
+              <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5 truncate">
+                <span dir="ltr">{{ entry.date }}</span>
+                <span class="mx-1.5">·</span>
+                <span>{{ entry.description }}</span>
+              </p>
             </div>
           </div>
 
-          <div class="flex gap-2">
+          <div class="flex gap-2 flex-shrink-0">
             <UiAppButton
               v-if="entry.status === 'draft'"
               variant="primary"
               size="sm"
+              icon="i-lucide-send"
               :loading="actionLoading"
               @click="handlePost"
             >
@@ -38,6 +44,7 @@
               v-if="entry.status === 'posted'"
               variant="outline"
               size="sm"
+              icon="i-lucide-undo-2"
               :loading="actionLoading"
               @click="handleReverse"
             >
@@ -47,6 +54,7 @@
               v-if="entry.status === 'draft'"
               variant="danger"
               size="sm"
+              icon="i-lucide-trash-2"
               @click="deleteConfirmOpen = true"
             >
               {{ $t('common.delete') }}
@@ -55,79 +63,79 @@
         </div>
 
         <!-- Lines table -->
-        <div
-          v-motion
-          :initial="{ opacity: 0, y: 15 }"
-          :enter="{ opacity: 1, y: 0, transition: { delay: 100 } }"
-          class="bg-white rounded-2xl border border-gray-100/80 overflow-hidden"
-        >
+        <div class="bg-neutral-0 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden">
           <table class="w-full text-sm">
-            <thead>
-              <tr class="bg-gray-50/80 border-b border-gray-100">
-                <th class="px-5 py-3 text-start text-xs font-semibold text-gray-400 uppercase">{{ locale === 'ar' ? 'الحساب' : 'Account' }}</th>
-                <th class="px-5 py-3 text-start text-xs font-semibold text-gray-400 uppercase">{{ locale === 'ar' ? 'البيان' : 'Description' }}</th>
-                <th class="px-5 py-3 text-start text-xs font-semibold text-gray-400 uppercase w-[150px]">{{ locale === 'ar' ? 'مدين' : 'Debit' }}</th>
-                <th class="px-5 py-3 text-start text-xs font-semibold text-gray-400 uppercase w-[150px]">{{ locale === 'ar' ? 'دائن' : 'Credit' }}</th>
+            <thead class="bg-neutral-50/60 dark:bg-neutral-950/40 text-[11px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+              <tr>
+                <th class="text-start px-4 py-2 font-semibold">{{ locale === 'ar' ? 'الحساب' : 'Account' }}</th>
+                <th class="text-start px-4 py-2 font-semibold">{{ locale === 'ar' ? 'البيان' : 'Description' }}</th>
+                <th class="text-end px-4 py-2 font-semibold w-[140px]">{{ locale === 'ar' ? 'مدين' : 'Debit' }}</th>
+                <th class="text-end px-4 py-2 font-semibold w-[140px]">{{ locale === 'ar' ? 'دائن' : 'Credit' }}</th>
               </tr>
             </thead>
-            <tbody>
-              <tr v-for="line in entry.lines" :key="line.id" class="border-b border-gray-50">
-                <td class="px-5 py-3">
-                  <span class="font-mono text-xs text-gray-400 me-2">{{ line.account?.code }}</span>
-                  <span class="text-gray-700">{{ locale === 'ar' ? line.account?.name_ar : line.account?.name_en }}</span>
+            <tbody class="divide-y divide-neutral-100 dark:divide-neutral-800/60">
+              <tr v-for="line in entry.lines" :key="line.id" class="hover:bg-neutral-50/60 dark:hover:bg-neutral-800/40 transition-colors">
+                <td class="px-4 py-2.5">
+                  <span class="font-mono text-xs text-neutral-500 dark:text-neutral-400 me-2">{{ line.account?.code }}</span>
+                  <span class="text-sm text-neutral-900 dark:text-neutral-0">{{ locale === 'ar' ? line.account?.name_ar : line.account?.name_en }}</span>
                 </td>
-                <td class="px-5 py-3 text-gray-500">{{ line.description || '-' }}</td>
-                <td class="px-5 py-3 font-mono" dir="ltr">
-                  <span v-if="Number(line.debit) > 0" class="text-emerald-600 font-medium">{{ Number(line.debit).toLocaleString() }}</span>
-                  <span v-else class="text-gray-200">-</span>
+                <td class="px-4 py-2.5 text-sm text-neutral-700 dark:text-neutral-200">{{ line.description || '—' }}</td>
+                <td class="px-4 py-2.5 text-end font-mono tabular-nums" dir="ltr">
+                  <span v-if="Number(line.debit) > 0" class="text-success-700 dark:text-success-400 font-medium">{{ Number(line.debit).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
+                  <span v-else class="text-neutral-300 dark:text-neutral-600">—</span>
                 </td>
-                <td class="px-5 py-3 font-mono" dir="ltr">
-                  <span v-if="Number(line.credit) > 0" class="text-blue-600 font-medium">{{ Number(line.credit).toLocaleString() }}</span>
-                  <span v-else class="text-gray-200">-</span>
+                <td class="px-4 py-2.5 text-end font-mono tabular-nums" dir="ltr">
+                  <span v-if="Number(line.credit) > 0" class="text-info-700 dark:text-info-400 font-medium">{{ Number(line.credit).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
+                  <span v-else class="text-neutral-300 dark:text-neutral-600">—</span>
                 </td>
               </tr>
             </tbody>
             <tfoot>
-              <tr class="border-t-2 border-gray-200 bg-gray-50/80">
-                <td colspan="2" class="px-5 py-3 font-bold text-gray-700">{{ $t('common.total') }}</td>
-                <td class="px-5 py-3 font-mono font-bold text-emerald-600" dir="ltr">{{ Number(entry.total_debit).toLocaleString() }}</td>
-                <td class="px-5 py-3 font-mono font-bold text-blue-600" dir="ltr">{{ Number(entry.total_credit).toLocaleString() }}</td>
+              <tr class="border-t-2 border-neutral-200 dark:border-neutral-800 bg-neutral-50/60 dark:bg-neutral-950/40">
+                <td colspan="2" class="px-4 py-3 text-sm font-bold text-neutral-900 dark:text-neutral-0">{{ $t('common.total') }}</td>
+                <td class="px-4 py-3 text-end font-mono font-bold tabular-nums text-success-700 dark:text-success-400" dir="ltr">{{ Number(entry.total_debit).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+                <td class="px-4 py-3 text-end font-mono font-bold tabular-nums text-info-700 dark:text-info-400" dir="ltr">{{ Number(entry.total_credit).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
               </tr>
             </tfoot>
           </table>
         </div>
 
         <!-- Meta info -->
-        <div
-          v-motion
-          :initial="{ opacity: 0 }"
-          :enter="{ opacity: 1, transition: { delay: 200 } }"
-          class="mt-4 text-xs text-gray-300 flex items-center gap-4"
-        >
-          <span v-if="entry.created_by_user">{{ locale === 'ar' ? 'بواسطة' : 'By' }}: {{ entry.created_by_user.name }}</span>
-          <span v-if="entry.posted_at">{{ locale === 'ar' ? 'ترحيل' : 'Posted' }}: {{ entry.posted_at }}</span>
-          <span v-if="entry.reference">{{ locale === 'ar' ? 'مرجع' : 'Ref' }}: {{ entry.reference }}</span>
+        <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-neutral-500 dark:text-neutral-400">
+          <span v-if="entry.created_by_user" class="inline-flex items-center gap-1">
+            <UIcon name="i-lucide-user" class="w-3 h-3" />
+            {{ entry.created_by_user.name }}
+          </span>
+          <span v-if="entry.posted_at" class="inline-flex items-center gap-1">
+            <UIcon name="i-lucide-check-circle-2" class="w-3 h-3" />
+            <span>{{ locale === 'ar' ? 'ترحيل:' : 'Posted:' }}</span>
+            <span dir="ltr" class="tabular-nums">{{ entry.posted_at }}</span>
+          </span>
+          <span v-if="entry.reference" class="inline-flex items-center gap-1">
+            <UIcon name="i-lucide-link-2" class="w-3 h-3" />
+            <span>{{ locale === 'ar' ? 'مرجع:' : 'Ref:' }}</span>
+            <span class="font-mono">{{ entry.reference }}</span>
+          </span>
         </div>
 
         <UiConfirmModal
           v-model="deleteConfirmOpen"
           :title="locale === 'ar' ? 'حذف القيد' : 'Delete Entry'"
-          :description="locale === 'ar' ? 'هل أنت متأكد؟' : 'Are you sure?'"
-          icon="&#9888;"
+          :description="locale === 'ar' ? 'لا يمكن استرجاع القيد بعد حذفه.' : 'This entry cannot be recovered once deleted.'"
+          icon="i-lucide-alert-triangle"
           variant="danger"
           :confirm-label="$t('common.delete')"
           @confirm="handleDelete"
         />
       </template>
-      </FeatureBoundary>
-    </NuxtLayout>
-  </div>
+    </div>
+  </FeatureBoundary>
 </template>
 
 <script setup lang="ts">
 import type { ApiError } from '~/core/api/errors'
 
-definePageMeta({ layout: false })
+definePageMeta({ layout: 'dashboard' })
 
 const { locale } = useI18n()
 const route = useRoute()
@@ -190,3 +198,33 @@ function statusLabel(s: string) {
   return s
 }
 </script>
+
+<style scoped>
+@reference "~/assets/css/tokens.css";
+
+.je-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-neutral-200);
+  background-color: var(--color-neutral-0, #fff);
+  color: var(--color-neutral-500);
+  transition: color 150ms var(--ease-standard), border-color 150ms var(--ease-standard);
+}
+.je-back:hover {
+  color: var(--color-neutral-900);
+  border-color: var(--color-neutral-300);
+}
+:global(html.dark) .je-back {
+  background-color: var(--color-neutral-900);
+  border-color: var(--color-neutral-800);
+  color: var(--color-neutral-400);
+}
+:global(html.dark) .je-back:hover {
+  color: var(--color-neutral-0);
+  border-color: var(--color-neutral-700);
+}
+</style>

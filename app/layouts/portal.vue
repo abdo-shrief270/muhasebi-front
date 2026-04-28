@@ -74,6 +74,8 @@
       </nav>
     </div>
 
+    <UiImpersonationBanner />
+
     <main class="flex-1 w-full max-w-screen-xl mx-auto px-6 py-8">
       <slot />
     </main>

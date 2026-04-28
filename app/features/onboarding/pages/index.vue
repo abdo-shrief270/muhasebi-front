@@ -1,6 +1,5 @@
 <template>
   <div>
-    <NuxtLayout name="dashboard">
       <FeatureBoundary id="onboarding">
       <div class="max-w-3xl mx-auto">
         <UiPageHeader
@@ -149,6 +148,32 @@
                     <input v-model="teamForm.email" type="email" class="input-field" />
                   </div>
                 </div>
+
+                <!-- Role picker — clickable cards instead of a flat select.
+                     Excludes the 'client' role since that goes through the
+                     portal-invite flow, not the internal team flow. -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-600 mb-2">{{ locale === 'ar' ? 'الدور' : 'Role' }}</label>
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <button
+                      v-for="role in roleOptions"
+                      :key="role.value"
+                      type="button"
+                      @click="teamForm.role = role.value"
+                      class="p-4 rounded-xl border-2 transition-all duration-200 text-start"
+                      :class="teamForm.role === role.value
+                        ? 'border-primary-500 bg-primary-50/50 shadow-sm'
+                        : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50/50'
+                      "
+                    >
+                      <div class="flex items-center gap-2 mb-1.5">
+                        <UIcon :name="role.icon" class="w-4 h-4 text-primary-500" />
+                        <p class="font-semibold text-gray-800 text-sm">{{ role.label }}</p>
+                      </div>
+                      <p class="text-xs text-gray-400 leading-snug">{{ role.description }}</p>
+                    </button>
+                  </div>
+                </div>
               </div>
             </template>
 
@@ -207,14 +232,13 @@
         </Transition>
       </div>
       </FeatureBoundary>
-    </NuxtLayout>
   </div>
 </template>
 
 <script setup lang="ts">
 definePageMeta({
   
-  layout: false,
+  layout: 'dashboard',
 })
 
 const { locale } = useI18n()
@@ -225,9 +249,76 @@ const currentStep = ref(0)
 const stepLoading = ref(false)
 const selectedTemplate = ref('general')
 
+/**
+ * Per-step completion state, fetched from /onboarding/progress on mount.
+ * UI step indices: 0=company, 1=coa, 2=first client, 3=team. Step 4 is the
+ * "Done" confirmation screen — no backend flag.
+ */
+const completedSteps = ref<[boolean, boolean, boolean, boolean]>([false, false, false, false])
+
+interface ProgressDto {
+  company_details_completed: boolean
+  coa_template_selected: boolean
+  first_client_added: boolean
+  team_invited: boolean
+  wizard_completed?: boolean
+}
+
+async function loadProgress() {
+  try {
+    const res = await api.get<{ data: ProgressDto }>('/onboarding/progress')
+    const p = res.data
+    completedSteps.value = [
+      !!p.company_details_completed,
+      !!p.coa_template_selected,
+      !!p.first_client_added,
+      !!p.team_invited,
+    ]
+    // Jump to the first incomplete step. If everything is done, land on the
+    // Done screen so the user can navigate back to /dashboard cleanly.
+    const firstIncomplete = completedSteps.value.findIndex(done => !done)
+    currentStep.value = firstIncomplete === -1 ? 4 : firstIncomplete
+  } catch {
+    // Progress fetch failed — fall back to step 0 so the user can still proceed.
+  }
+}
+
+onMounted(loadProgress)
+
 const companyForm = reactive({ email: '', phone: '', tax_id: '', city: '' })
 const clientForm = reactive({ name: '', tax_id: '', email: '', phone: '' })
-const teamForm = reactive({ name: '', email: '' })
+const teamForm = reactive({ name: '', email: '', role: 'accountant' })
+
+// Roles offered for the *internal* team-invite flow. Backend accepts a wider
+// set (admin, accountant, auditor, client) but `client` belongs to the portal
+// invite flow, so we leave it out here. Default = accountant for an accounting
+// firm — the most common new-hire role.
+const roleOptions = computed(() => [
+  {
+    value: 'accountant',
+    icon: 'i-lucide-calculator',
+    label: locale.value === 'ar' ? 'محاسب' : 'Accountant',
+    description: locale.value === 'ar'
+      ? 'يدخل العمليات اليومية والقيود والفواتير.'
+      : 'Records day-to-day transactions, journals, and invoices.',
+  },
+  {
+    value: 'auditor',
+    icon: 'i-lucide-shield-check',
+    label: locale.value === 'ar' ? 'مراجع' : 'Auditor',
+    description: locale.value === 'ar'
+      ? 'صلاحيات قراءة فقط للمراجعة الداخلية.'
+      : 'Read-only access for review and audit.',
+  },
+  {
+    value: 'admin',
+    icon: 'i-lucide-shield',
+    label: locale.value === 'ar' ? 'مدير' : 'Admin',
+    description: locale.value === 'ar'
+      ? 'صلاحيات كاملة على بيانات الشركة والإعدادات.'
+      : 'Full access to company data and settings.',
+  },
+])
 
 const steps = computed(() => [
   { label: locale.value === 'ar' ? 'بيانات الشركة' : 'Company' },
@@ -244,7 +335,10 @@ const coaTemplates = computed(() => [
 ])
 
 function isStepComplete(index: number) {
-  return index < currentStep.value
+  // Steps 0–3 read from the fetched progress state; step 4 is the final
+  // "Done" screen — only "complete" once we're actually on it.
+  if (index < 4) return completedSteps.value[index] === true
+  return currentStep.value >= 4
 }
 
 function stepCircleClass(index: number) {
@@ -254,25 +348,51 @@ function stepCircleClass(index: number) {
 }
 
 async function handleNext() {
+  // Skip the API call if this step is already marked complete server-side
+  // (e.g. user landed mid-flow and clicked through). Just advance the cursor
+  // and find the next incomplete step.
+  if (isStepComplete(currentStep.value)) {
+    advanceToNextIncomplete()
+    return
+  }
+
   stepLoading.value = true
   try {
-    if (currentStep.value === 0) {
+    const step = currentStep.value
+    if (step === 0) {
       await api.post('/onboarding/complete-step', { step: 'company_details' })
-    } else if (currentStep.value === 1) {
+    } else if (step === 1) {
       await api.post('/onboarding/setup-coa', { template: selectedTemplate.value })
-    } else if (currentStep.value === 2 && clientForm.name) {
+    } else if (step === 2 && clientForm.name) {
       await api.post('/clients', clientForm)
       await api.post('/onboarding/complete-step', { step: 'first_client' })
-    } else if (currentStep.value === 3 && teamForm.email) {
+    } else if (step === 3 && teamForm.email) {
       await api.post('/onboarding/invite-team-member', teamForm)
     }
-    currentStep.value++
+    completedSteps.value[step] = true
+    advanceToNextIncomplete()
     toastStore.success(locale.value === 'ar' ? 'تم حفظ البيانات' : 'Data saved')
   } catch (e: any) {
     toastStore.error(e.data?.message || 'Something went wrong')
   } finally {
     stepLoading.value = false
   }
+}
+
+/**
+ * Move the cursor forward to the next not-yet-completed step. If everything
+ * is done, land on step 4 (the Done screen). Used after successful completion
+ * AND when the user clicks Continue on a step we already know is done.
+ */
+function advanceToNextIncomplete() {
+  const startFrom = currentStep.value + 1
+  for (let i = startFrom; i < 4; i++) {
+    if (!completedSteps.value[i]) {
+      currentStep.value = i
+      return
+    }
+  }
+  currentStep.value = 4
 }
 
 function skipAndFinish() {

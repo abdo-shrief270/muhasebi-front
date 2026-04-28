@@ -32,6 +32,15 @@ export interface ApprovalWorkflowForm {
   steps: ApprovalStep[]
 }
 
+export interface ApprovalAction {
+  step: number
+  approver_id: number
+  decision: 'approved' | 'rejected'
+  comment: string | null
+  acted_at: string
+  actor?: { id: number; name: string } | null
+}
+
 export interface ApprovalRequest {
   id: number
   entity_type: ApprovableEntity
@@ -41,13 +50,14 @@ export interface ApprovalRequest {
   current_step: number | null
   submitted_by: number
   submitted_at: string
-  approvals: Array<{
-    step: number
-    approver_id: number
-    decision: 'approved' | 'rejected'
-    comment: string | null
-    acted_at: string
-  }>
+  amount?: number | null
+  approvals: ApprovalAction[]
+  // Eager-loaded by the controller — see ApprovalWorkflowService::listPending
+  // (`with(['workflow', 'requester'])`) and listForEntity
+  // (`with(['workflow', 'actions.actor', 'requester'])`).
+  workflow?: Pick<ApprovalWorkflow, 'id' | 'name_ar' | 'name_en' | 'entity_type'> | null
+  requester?: { id: number; name: string } | null
+  actions?: ApprovalAction[]
 }
 
 export interface SubmitApprovalPayload {
@@ -98,9 +108,13 @@ export function approvalsService() {
     reject: (id: number, comment: string, idempotencyKey?: string) =>
       api.post<ItemResponse<ApprovalRequest>>(ENDPOINTS.approvals.reject(id), { comment }, { idempotencyKey }).then(r => r.data),
 
-    pending: (params: BaseListParams = {}) =>
-      api.get<ListResponse<ApprovalRequest>>(`${ENDPOINTS.approvals.pending}${toQuery(params)}`),
-    history: (params: BaseListParams & { entity_type?: ApprovableEntity; status?: ApprovalStatus } = {}) =>
-      api.get<ListResponse<ApprovalRequest>>(`${ENDPOINTS.approvals.history}${toQuery(params)}`),
+    // NB: controller wraps the collection via ApiResponse::success so the
+    // envelope is `{ message, data: ApprovalRequest[] }` — NOT the paginated
+    // ListResponse shape. The backend also requires entity_type + entity_id
+    // for history (it's per-entity, not a firm-wide feed).
+    pending: () =>
+      api.get<ItemResponse<ApprovalRequest[]>>(ENDPOINTS.approvals.pending).then(r => r.data),
+    history: (params: { entity_type: ApprovableEntity; entity_id: number }) =>
+      api.get<ItemResponse<ApprovalRequest[]>>(`${ENDPOINTS.approvals.history}${toQuery(params)}`).then(r => r.data),
   }
 }

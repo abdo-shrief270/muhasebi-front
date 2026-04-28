@@ -24,19 +24,55 @@ export interface SubscriptionRecord {
   limits: Record<string, number>
 }
 
-export interface UsageSlice {
-  used: number
+/**
+ * One row in the `/subscription/usage` response. `current` and `limit` are
+ * scalar; `boost_contribution` reports how much of `limit` came from active
+ * add-ons, so the UI can render a "10 base + 5 add-on" breakdown.
+ *
+ * Shape comes from `App\Domain\Subscription\Services\UsageService::buildMetric`.
+ */
+export interface UsageMetric {
+  current: number
   /** -1 = unlimited. */
   limit: number
+  /** Plan-only portion of the limit, after subtracting add-on boost. */
+  base_limit: number
+  boost_contribution: number
+  percent: number
+  exceeded: boolean
 }
 
+/**
+ * Storage row is special-cased — bytes are humanized server-side and the
+ * service returns parallel `_human` strings to skip client-side formatting.
+ */
+export interface UsageStorageMetric {
+  current_bytes: number
+  limit_bytes: number
+  current_human: string
+  limit_human: string
+  percent: number
+  exceeded: boolean
+  boost_contribution: number
+}
+
+/**
+ * `/subscription/usage` payload. The `projections` map gives a rough
+ * "exhaust date" for each metered resource based on the trailing 14-day
+ * trend; `null` means either unlimited, no growth, or beyond a year out.
+ */
 export interface UsageSnapshot {
-  period: { start: string; end: string }
-  users: UsageSlice
-  invoices_created: UsageSlice
-  storage_gb: UsageSlice
-  api_calls: UsageSlice
-  [key: string]: UsageSlice | { start: string; end: string }
+  users: UsageMetric
+  clients: UsageMetric
+  invoices: UsageMetric
+  bills: UsageMetric
+  journal_entries: UsageMetric
+  bank_imports: UsageMetric
+  documents: UsageMetric
+  api_calls: UsageMetric
+  storage: UsageStorageMetric
+  plan: { name: string; name_ar: string; slug: string | null }
+  projections: Record<string, string | null>
 }
 
 export interface SubscribePayload {

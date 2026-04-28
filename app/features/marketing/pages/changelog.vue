@@ -1,6 +1,5 @@
 <template>
   <div>
-    <NuxtLayout name="public">
       <div class="max-w-3xl mx-auto px-6 py-12">
         <!-- Header -->
         <div class="mb-12">
@@ -65,12 +64,11 @@
           </div>
         </div>
       </div>
-    </NuxtLayout>
   </div>
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: false })
+definePageMeta({ layout: 'public' })
 
 const { locale } = useI18n()
 const { getPage } = usePages()

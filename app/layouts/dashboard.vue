@@ -9,14 +9,27 @@
       aria-hidden="true"
     />
 
+    <!--
+      Sidebar wrapper.
+      Mobile (< lg):
+        - `fixed inset-y-0 start-0` so it overlays the page at full height.
+        - Translates off-screen when `mobileOpen` is false.
+      Desktop (≥ lg):
+        - `lg:sticky lg:top-0 lg:h-screen` keeps the column pinned to the
+          viewport edge. The sidebar's internal `<nav>` already has
+          `overflow-y-auto`, so once we cap the column height to the
+          viewport the nav scrolls inside without dragging the page.
+        - `lg:translate-x-0` cancels the mobile transform.
+    -->
     <div
-      class="fixed lg:static inset-y-0 start-0 z-40 transition-transform duration-200"
+      class="fixed lg:sticky lg:top-0 inset-y-0 lg:inset-y-auto start-0 lg:h-screen z-40 transition-transform duration-200"
       :class="mobileOpen ? 'translate-x-0' : (isRtl ? 'translate-x-full lg:translate-x-0' : '-translate-x-full lg:translate-x-0')"
     >
       <UiAppSidebar />
     </div>
 
     <div class="flex-1 flex flex-col min-w-0">
+      <UiImpersonationBanner />
       <UiAppTopbar
         @toggle-sidebar="mobileOpen = !mobileOpen"
         @open-search="searchRef?.open()"

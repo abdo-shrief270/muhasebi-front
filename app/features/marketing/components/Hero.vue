@@ -94,7 +94,7 @@
         >
           <div class="relative">
             <!-- Floating cards behind -->
-            <div class="absolute -top-8 -start-8 w-48 h-32 bg-white rounded-2xl shadow-xl shadow-gray-200/50 p-4 animate-float-slow z-0 border border-gray-100">
+            <div class="absolute -top-8 -start-8 w-48 h-32 bg-white rounded-2xl shadow-xl shadow-gray-200/50 p-4 animate-float-slow z-10 border border-gray-100">
               <div class="flex items-center gap-2 mb-3">
                 <div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
                   <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" /></svg>
@@ -105,7 +105,7 @@
               <div class="text-xs text-emerald-500 font-semibold">+12.5%</div>
             </div>
 
-            <div class="absolute -bottom-6 -end-6 w-44 h-28 bg-white rounded-2xl shadow-xl shadow-gray-200/50 p-4 animate-float-medium z-0 border border-gray-100">
+            <div class="absolute -bottom-6 -end-6 w-44 h-28 bg-white rounded-2xl shadow-xl shadow-gray-200/50 p-4 animate-float-medium z-10 border border-gray-100">
               <div class="flex items-center gap-2 mb-2">
                 <div class="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center">
                   <svg class="w-4 h-4 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg>

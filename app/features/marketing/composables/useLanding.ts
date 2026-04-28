@@ -167,7 +167,46 @@ export function useLanding() {
     } catch { return [] }
   }
 
-  return { getLanding, getPublicPlans, getPublicTestimonials, getPublicFaqs }
+  /**
+   * /landing/feature-showcase — bilingual marketing showcase. Each section
+   * carries its items inline so the page renders in a single round-trip.
+   * Falls back to an empty array on backend miss; the page shows a graceful
+   * empty state in that case.
+   */
+  async function getFeatureShowcase(): Promise<FeatureShowcaseSection[]> {
+    try {
+      const data = await api.get<{ data: FeatureShowcaseSection[] }>('/landing/feature-showcase')
+      return data.data ?? []
+    } catch { return [] }
+  }
+
+  return { getLanding, getPublicPlans, getPublicTestimonials, getPublicFaqs, getFeatureShowcase }
+}
+
+export interface FeatureShowcaseItem {
+  id: number
+  icon: string | null
+  title_en: string
+  title_ar: string
+  description_en: string
+  description_ar: string
+  badge_en: string | null
+  badge_ar: string | null
+  sort_order: number
+}
+
+export interface FeatureShowcaseSection {
+  id: number
+  slug: string
+  icon: string | null
+  /** primary | info | success | warning | danger — drives accent color in the SPA. */
+  accent: 'primary' | 'info' | 'success' | 'warning' | 'danger'
+  title_en: string
+  title_ar: string
+  subtitle_en: string | null
+  subtitle_ar: string | null
+  sort_order: number
+  items: FeatureShowcaseItem[]
 }
 
 export interface PaginatedResponse<T> {

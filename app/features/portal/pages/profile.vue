@@ -1,6 +1,5 @@
 <template>
   <div>
-    <NuxtLayout name="portal">
       <UiPageHeader :title="locale === 'ar' ? 'الملف الشخصي' : 'My Profile'" />
 
       <div v-if="loading"><UiLoadingSkeleton :lines="4" :height="24" /></div>
@@ -41,12 +40,11 @@
           </div>
         </div>
       </div>
-    </NuxtLayout>
   </div>
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: false })
+definePageMeta({ layout: 'portal' })
 const { locale } = useI18n()
 const api = useApi()
 

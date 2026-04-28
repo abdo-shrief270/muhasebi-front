@@ -2,10 +2,11 @@
   <button
     :type="type"
     :disabled="loading || disabled"
-    class="inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-all duration-200 active:scale-[0.97]"
-    :class="[sizeClasses, variantClasses, { 'opacity-50 cursor-not-allowed': loading || disabled }]"
+    class="inline-flex items-center justify-center gap-1.5 font-semibold rounded-md transition-colors active:scale-[0.98] outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+    :class="[sizeClasses, variantClasses, { 'opacity-60 cursor-not-allowed': loading || disabled }]"
   >
-    <span v-if="loading" class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+    <UIcon v-if="loading" name="i-lucide-loader-2" class="w-4 h-4 animate-spin flex-shrink-0" />
+    <UIcon v-else-if="icon" :name="icon" class="flex-shrink-0" :class="iconSize" />
     <slot />
   </button>
 </template>
@@ -17,6 +18,7 @@ const props = withDefaults(defineProps<{
   type?: 'button' | 'submit'
   loading?: boolean
   disabled?: boolean
+  icon?: string
 }>(), {
   variant: 'primary',
   size: 'md',
@@ -26,16 +28,22 @@ const props = withDefaults(defineProps<{
 })
 
 const sizeClasses = computed(() => ({
-  sm: 'px-3 py-1.5 text-xs',
-  md: 'px-5 py-2.5 text-sm',
-  lg: 'px-7 py-3 text-base',
+  sm: 'h-7 px-2.5 text-xs',
+  md: 'h-8 px-3 text-xs',
+  lg: 'h-10 px-4 text-sm',
+} as const)[props.size])
+
+const iconSize = computed(() => ({
+  sm: 'w-3.5 h-3.5',
+  md: 'w-3.5 h-3.5',
+  lg: 'w-4 h-4',
 } as const)[props.size])
 
 const variantClasses = computed(() => ({
-  primary: 'bg-primary-500 text-white hover:bg-primary-600 shadow-sm shadow-primary-500/20',
-  secondary: 'bg-secondary-400 text-white hover:bg-secondary-500 shadow-sm shadow-secondary-400/20',
-  outline: 'border border-gray-200 text-gray-700 hover:bg-gray-50',
-  ghost: 'text-gray-600 hover:bg-gray-100',
-  danger: 'bg-red-500 text-white hover:bg-red-600 shadow-sm shadow-red-500/20',
+  primary:   'bg-primary-600 text-white hover:bg-primary-700 shadow-sm',
+  secondary: 'bg-info-600 text-white hover:bg-info-700 shadow-sm',
+  outline:   'border border-neutral-200 dark:border-neutral-800 bg-neutral-0 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800',
+  ghost:     'text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800',
+  danger:    'bg-danger-600 text-white hover:bg-danger-700 shadow-sm',
 } as const)[props.variant])
 </script>

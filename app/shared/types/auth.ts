@@ -21,11 +21,22 @@ export interface TenantInfo {
   primary_color: string | null
   secondary_color: string | null
   city: string | null
-  // NOTE (BACKEND_QUESTIONS 9.1): `plan` + `features` are NOT on the /me.tenant
-  // payload today. They live on `/v1/subscription`. Kept optional for forward
-  // compatibility when the backend ships the merge into /me.
-  plan?: string | null
-  features?: string[]
+  // 2026-04-23: backend now returns `features` on /me.tenant as a flag→bool
+  // map merged from the active subscription's plan + per-tenant overrides
+  // (AuthController::tenantFeatures). This replaces the separate
+  // /subscription.enabled_features fetch for nav gating.
+  features?: Record<string, boolean>
+  // Active subscription's plan summary — added 2026-04-23 so the SPA can
+  // evaluate manifest `plans: [...]` gates from /me alone. The dedicated
+  // /subscription endpoint still exists for richer detail (billing cycle,
+  // periods, limits, usage) when the subscription page needs it.
+  plan?: {
+    id: number
+    slug: string
+    name_en: string | null
+    name_ar: string | null
+  } | null
+  subscription_status?: string | null
 }
 
 export interface User {
@@ -44,12 +55,18 @@ export interface User {
   created_at: string
 }
 
+/**
+ * `GET /me` returns user fields directly on `data` (flat shape), not nested
+ * under `data.user`. Tenant is nested at `data.tenant`, permissions at
+ * `data.permissions`. The earlier `{ data: { user, tenant, permissions,
+ * two_factor_enabled } }` shape was a stale doc; the real backend has
+ * always returned the flat shape.
+ */
 export interface MeResponse {
-  data: {
-    user: User
-    tenant: TenantInfo
+  data: User & {
     permissions: string[]
-    two_factor_enabled: boolean
+    spatie_roles?: string[]
+    tenant: TenantInfo | null
   }
 }
 
@@ -68,15 +85,36 @@ export interface LoginResponse {
   }
 }
 
+/**
+ * Matches the REAL `/v1/register` contract (RegisterRequest::rules).
+ * Backend requires `tenant_name` + `tenant_slug` (alpha_dash, unique). The SPA
+ * derives a slug from `tenant_name` at submit time; users can rename it later
+ * from tenant settings.
+ */
 export interface RegisterPayload {
-  company_name: string
-  first_name: string
-  last_name: string
+  name: string
   email: string
   password: string
   password_confirmation: string
   phone?: string
-  city?: string
+  tenant_name: string
+  tenant_slug: string
+}
+
+/** /v1/register response shape (AuthController::register). */
+export interface RegisterResponse {
+  message: string
+  data: {
+    user: User
+    token: string
+    tenant: {
+      id: number
+      name: string
+      slug: string
+      status: string
+      trial_ends_at: string | null
+    }
+  }
 }
 
 export interface AuthResponse {

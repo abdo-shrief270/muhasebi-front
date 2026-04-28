@@ -1,6 +1,5 @@
 <template>
   <div>
-    <NuxtLayout name="portal">
       <UiPageHeader :title="locale === 'ar' ? 'مرحباً' : 'Welcome'" :subtitle="authStore.user?.name" />
 
       <div v-if="loading"><UiLoadingSkeleton :lines="4" :height="80" /></div>
@@ -53,12 +52,11 @@
           <div v-else class="p-8"><UiEmptyState icon="&#9993;" :title="locale === 'ar' ? 'لا توجد فواتير' : 'No invoices'" /></div>
         </div>
       </div>
-    </NuxtLayout>
   </div>
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: false })
+definePageMeta({ layout: 'portal' })
 const { locale } = useI18n()
 const authStore = useAuthStore()
 const api = useApi()

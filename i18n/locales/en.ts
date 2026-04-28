@@ -27,6 +27,16 @@ export default {
     total: 'Total',
     details: 'Details',
     all: 'All',
+    // Used by AppTable / AppColumnChooser shared components.
+    columns: 'Columns',
+    export: 'Export',
+    remove: 'Remove',
+    rows_per_page: 'Rows per page',
+  },
+  confirm: {
+    // Used by AppConfirmDialog when the destructive variant requires the
+    // user to explicitly tick "I understand" before the confirm CTA enables.
+    acknowledge: 'I understand the consequences of this action.',
   },
   auth: {
     login: 'Login',
@@ -48,11 +58,23 @@ export default {
     invalidCredentials: 'Invalid credentials',
   },
   nav: {
+    // Page-level umbrella titles — used by `:title="$t('nav.x')"` at the top
+    // of the corresponding feature index page. Keep these distinct from the
+    // sidebar leaf keys below (e.g. nav.report_center) which name a single
+    // route, while these name the whole feature area.
+    accounts: 'Accounts',
+    eta: 'E-Invoicing',
+    journalEntries: 'Journal Entries',
+    payroll: 'Payroll',
+    reports: 'Reports',
+    settings: 'Settings',
+
     home: 'Home',
     notifications: 'Notifications',
     activity: 'Activity Log',
     audit: 'Audit Compliance',
     clients: 'Clients',
+    catalog: 'Catalog',
     invoices: 'Invoices',
     recurring_invoices: 'Recurring Invoices',
     payments_received: 'Payments Received',
@@ -291,6 +313,84 @@ export default {
       rights: 'All rights reserved.',
       privacy: 'Privacy Policy',
       terms: 'Terms of Service',
+    },
+  },
+
+  /**
+   * Plan-feature and plan-limit labels — the slugs are the same ones the
+   * backend exposes from `config/features.php` catalog and `Plan.limits`
+   * JSON. The `subscription/upgrade.vue` and `subscription/add-ons.vue`
+   * pages call `t('subscription.features.<slug>')` / `t('subscription.limits.<slug>')`
+   * and fall back to slug humanization on miss, so any feature/limit
+   * surfaced by the backend stays renderable even if not yet listed here.
+   *
+   * Keep in sync with `config/features.php` catalog `name_en/name_ar` —
+   * the backend catalog is the source of truth.
+   */
+  subscription: {
+    features: {
+      // Core modules
+      clients: 'Clients',
+      documents: 'Documents',
+      invoicing: 'Invoicing',
+      accounting: 'Accounting (COA / Journal)',
+      reports: 'Reports',
+      dashboard: 'Dashboard',
+      notifications: 'Notifications',
+      activity_feed: 'Activity Feed',
+
+      // Settings & admin
+      team_management: 'Team Management',
+      onboarding: 'Onboarding Wizard',
+      subscription_management: 'Subscription & Billing',
+      company_settings: 'Company Settings',
+      currencies: 'Currencies',
+      general_settings: 'General Settings',
+
+      // Operations
+      banking: 'Banking & Reconciliation',
+      expenses: 'Expenses',
+      bills_vendors: 'Bills & Vendors',
+      collections: 'Collections (AR)',
+      fixed_assets: 'Fixed Assets',
+      tax: 'Tax Management',
+      cost_centers: 'Cost Centers',
+      budgeting: 'Budgeting',
+      inventory: 'Inventory',
+      payroll: 'Payroll',
+      timesheets: 'Timesheets',
+      engagements: 'Engagements',
+
+      // Integrations
+      ecommerce: 'E-Commerce Integration',
+      approvals: 'Approvals',
+      alerts: 'Alerts',
+      e_invoice: 'ETA E-Invoice',
+      api_access: 'Public API Access',
+      custom_reports: 'Custom Reports',
+      client_portal: 'Client Portal',
+      client_messaging: 'Client Messaging',
+      data_import: 'Data Import (CSV)',
+      webhooks: 'Webhooks',
+      landing_page: 'Public Landing Page',
+
+      // Compliance / support
+      priority_support: 'Priority Support',
+      audit_log: 'Audit Log (Compliance)',
+
+      // Experimental
+      experimental_ai: 'AI Suggestions (Preview)',
+    },
+    limits: {
+      max_users: 'Users',
+      max_clients: 'Clients',
+      max_storage_bytes: 'Storage',
+      max_invoices_per_month: 'Invoices / month',
+      max_bills_per_month: 'Bills / month',
+      max_journal_entries_per_month: 'Journal entries / month',
+      max_bank_imports_per_month: 'Bank imports / month',
+      max_documents: 'Documents',
+      max_api_calls_per_month: 'API calls / month',
     },
   },
 }

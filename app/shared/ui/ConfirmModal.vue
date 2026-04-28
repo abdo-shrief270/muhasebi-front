@@ -3,35 +3,39 @@
     <Transition name="fade">
       <div
         v-if="modelValue"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4"
+        class="fixed inset-0 z-modal flex items-center justify-center p-4"
       >
         <!-- Backdrop -->
-        <div class="absolute inset-0 bg-black/20 backdrop-blur-[2px]" @click="cancel"></div>
+        <div class="absolute inset-0 bg-neutral-950/50 backdrop-blur-[2px]" @click="cancel"></div>
 
         <!-- Modal -->
         <div
           v-motion
-          :initial="{ opacity: 0, scale: 0.95 }"
-          :enter="{ opacity: 1, scale: 1 }"
-          class="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-6"
+          :initial="{ opacity: 0, scale: 0.96, y: 8 }"
+          :enter="{ opacity: 1, scale: 1, y: 0 }"
+          class="relative bg-neutral-0 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-overlay max-w-md w-full p-6"
         >
           <div class="text-center">
             <div
-              class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl"
-              :class="variant === 'danger' ? 'bg-red-50 text-red-500' : 'bg-primary-50 text-primary-500'"
+              class="w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4"
+              :class="variant === 'danger' ? 'bg-danger-500/10 text-danger-600 dark:text-danger-400' : 'bg-primary-500/10 text-primary-700 dark:text-primary-300'"
             >
-              {{ icon }}
+              <UIcon v-if="isLucideIcon" :name="icon" class="w-5 h-5" />
+              <span v-else class="text-xl">{{ icon }}</span>
             </div>
-            <h3 class="text-lg font-bold text-gray-800 mb-2">{{ title }}</h3>
-            <p class="text-sm text-gray-400 mb-6">{{ description }}</p>
+            <h3 class="text-base font-bold text-neutral-900 dark:text-neutral-0 mb-1.5">{{ title }}</h3>
+            <p v-if="description" class="text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed mb-5">
+              {{ description }}
+            </p>
           </div>
 
-          <div class="flex gap-3">
-            <UiAppButton variant="outline" class="flex-1" @click="cancel">
+          <div class="flex gap-2">
+            <UiAppButton variant="outline" size="lg" class="flex-1" @click="cancel">
               {{ $t('common.cancel') }}
             </UiAppButton>
             <UiAppButton
               :variant="variant === 'danger' ? 'danger' : 'primary'"
+              size="lg"
               class="flex-1"
               :loading="loading"
               @click="$emit('confirm')"
@@ -46,7 +50,7 @@
 </template>
 
 <script setup lang="ts">
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   modelValue: boolean
   title: string
   description?: string
@@ -55,7 +59,7 @@ withDefaults(defineProps<{
   confirmLabel?: string
   loading?: boolean
 }>(), {
-  icon: '?',
+  icon: 'i-lucide-help-circle',
   variant: 'default',
   loading: false,
 })
@@ -65,7 +69,14 @@ const emit = defineEmits<{
   confirm: []
 }>()
 
+const isLucideIcon = computed(() => typeof props.icon === 'string' && props.icon.startsWith('i-'))
+
 function cancel() {
   emit('update:modelValue', false)
 }
 </script>
+
+<style scoped>
+.fade-enter-active, .fade-leave-active { transition: opacity 200ms var(--ease-standard); }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+</style>

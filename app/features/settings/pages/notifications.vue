@@ -1,126 +1,134 @@
 <template>
-  <div>
-    <NuxtLayout name="dashboard">
-      <FeatureBoundary id="settings">
+  <FeatureBoundary id="settings">
+    <div class="px-4 lg:px-6 py-5 max-w-4xl mx-auto">
       <UiPageHeader
-        :title="locale === 'ar' ? '\u0625\u0639\u062F\u0627\u062F\u0627\u062A \u0627\u0644\u0625\u0634\u0639\u0627\u0631\u0627\u062A' : 'Notification Preferences'"
-        :subtitle="locale === 'ar' ? '\u062A\u062D\u0643\u0645 \u0641\u064A \u0637\u0631\u064A\u0642\u0629 \u0648\u0635\u0648\u0644 \u0627\u0644\u0625\u0634\u0639\u0627\u0631\u0627\u062A \u0625\u0644\u064A\u0643' : 'Control how you receive notifications'"
-      />
-
-      <div class="max-w-4xl">
-        <!-- Loading -->
-        <div v-if="loading">
-          <UiLoadingSkeleton :lines="9" :height="48" />
-        </div>
-
-        <!-- Preferences table -->
-        <div
-          v-else
-          v-motion
-          :initial="{ opacity: 0, y: 15 }"
-          :enter="{ opacity: 1, y: 0, transition: { delay: 100 } }"
-          class="bg-white rounded-2xl border border-gray-100/80 overflow-hidden"
-        >
-          <!-- Save indicator -->
+        icon="i-lucide-bell"
+        :title="locale === 'ar' ? 'إعدادات الإشعارات' : 'Notification Preferences'"
+        :subtitle="locale === 'ar' ? 'تحكم في طريقة وصول الإشعارات إليك' : 'Control how you receive notifications'"
+      >
+        <template #actions>
           <Transition name="fade">
-            <div v-if="saveStatus" class="px-6 py-2 text-xs font-medium" :class="saveStatus === 'saving' ? 'bg-primary-50 text-primary-600' : saveStatus === 'saved' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'">
-              {{ saveStatus === 'saving' ? (locale === 'ar' ? '\u062C\u0627\u0631\u064A \u0627\u0644\u062D\u0641\u0638...' : 'Saving...') : saveStatus === 'saved' ? (locale === 'ar' ? '\u062A\u0645 \u0627\u0644\u062D\u0641\u0638' : 'Saved') : (locale === 'ar' ? '\u0641\u0634\u0644 \u0627\u0644\u062D\u0641\u0638' : 'Save failed') }}
-            </div>
+            <span
+              v-if="saveStatus"
+              class="text-xs font-medium inline-flex items-center gap-1.5"
+              :class="saveStatus === 'saving'
+                ? 'text-primary-700 dark:text-primary-400'
+                : saveStatus === 'saved'
+                  ? 'text-success-700 dark:text-success-400'
+                  : 'text-danger-700 dark:text-danger-400'"
+            >
+              <UIcon
+                :name="saveStatus === 'saving'
+                  ? 'i-lucide-loader-2'
+                  : saveStatus === 'saved'
+                    ? 'i-lucide-check'
+                    : 'i-lucide-alert-triangle'"
+                class="w-3.5 h-3.5"
+                :class="{ 'animate-spin': saveStatus === 'saving' }"
+              />
+              {{ saveStatus === 'saving'
+                ? (locale === 'ar' ? 'جاري الحفظ...' : 'Saving...')
+                : saveStatus === 'saved'
+                  ? (locale === 'ar' ? 'تم الحفظ' : 'Saved')
+                  : (locale === 'ar' ? 'فشل الحفظ' : 'Save failed') }}
+            </span>
           </Transition>
+        </template>
+      </UiPageHeader>
 
-          <table class="w-full">
-            <thead>
-              <tr class="border-b border-gray-100/80">
-                <th class="text-start px-6 py-4 text-sm font-semibold text-gray-700">
-                  {{ locale === 'ar' ? '\u0646\u0648\u0639 \u0627\u0644\u0625\u0634\u0639\u0627\u0631' : 'Notification Type' }}
-                </th>
-                <th v-for="ch in channels" :key="ch.key" class="px-6 py-4 text-center text-sm font-semibold text-gray-700 w-32">
-                  <div class="flex flex-col items-center gap-1">
-                    <span class="text-base">{{ ch.icon }}</span>
-                    <span>{{ locale === 'ar' ? ch.labelAr : ch.labelEn }}</span>
-                  </div>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="(nt, i) in notificationTypes"
-                :key="nt.key"
-                v-motion
-                :initial="{ opacity: 0, x: locale === 'ar' ? 10 : -10 }"
-                :enter="{ opacity: 1, x: 0, transition: { delay: 80 + i * 40 } }"
-                class="border-b border-gray-50 last:border-b-0 hover:bg-gray-50/50 transition-colors"
-              >
-                <td class="px-6 py-4">
-                  <p class="text-sm font-medium text-gray-800">{{ locale === 'ar' ? nt.labelAr : nt.labelEn }}</p>
-                </td>
-                <td v-for="ch in channels" :key="ch.key" class="px-6 py-4 text-center">
-                  <button
-                    type="button"
-                    role="switch"
-                    :aria-checked="isEnabled(nt.key, ch.key)"
-                    @click="toggle(nt.key, ch.key)"
-                    class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:ring-offset-1"
-                    :class="isEnabled(nt.key, ch.key) ? 'bg-primary-500' : 'bg-gray-200'"
-                  >
-                    <span
-                      class="inline-block h-4 w-4 rounded-full bg-white shadow-sm transform transition-transform duration-200"
-                      :class="isEnabled(nt.key, ch.key) ? (locale === 'ar' ? '-translate-x-5' : 'translate-x-6') : (locale === 'ar' ? '-translate-x-1' : 'translate-x-1')"
-                    />
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Hint -->
-        <p
-          v-if="!loading"
-          v-motion
-          :initial="{ opacity: 0 }"
-          :enter="{ opacity: 1, transition: { delay: 500 } }"
-          class="text-xs text-gray-400 mt-4"
-        >
-          {{ locale === 'ar' ? '\u064A\u062A\u0645 \u062D\u0641\u0638 \u0627\u0644\u062A\u063A\u064A\u064A\u0631\u0627\u062A \u062A\u0644\u0642\u0627\u0626\u064A\u064B\u0627' : 'Changes are saved automatically' }}
-        </p>
+      <div v-if="loading" class="bg-neutral-0 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4 space-y-2">
+        <div v-for="i in 9" :key="i" class="h-10 rounded-md bg-neutral-100 dark:bg-neutral-800 animate-pulse" />
       </div>
-      </FeatureBoundary>
-    </NuxtLayout>
-  </div>
+
+      <div
+        v-else
+        class="bg-neutral-0 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden"
+      >
+        <table class="w-full">
+          <thead class="bg-neutral-50/60 dark:bg-neutral-950/40 border-b border-neutral-200 dark:border-neutral-800">
+            <tr>
+              <th class="text-start px-4 py-2 text-[11px] uppercase tracking-wider font-semibold text-neutral-500 dark:text-neutral-400">
+                {{ locale === 'ar' ? 'نوع الإشعار' : 'Notification Type' }}
+              </th>
+              <th v-for="ch in channels" :key="ch.key" class="px-4 py-2 text-center text-[11px] uppercase tracking-wider font-semibold text-neutral-500 dark:text-neutral-400 w-24">
+                <div class="flex flex-col items-center gap-1">
+                  <UIcon :name="ch.icon" class="w-3.5 h-3.5" />
+                  <span>{{ locale === 'ar' ? ch.labelAr : ch.labelEn }}</span>
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-neutral-100 dark:divide-neutral-800/60">
+            <tr
+              v-for="(nt, i) in notificationTypes"
+              :key="nt.key"
+              v-motion
+              :initial="{ opacity: 0, x: locale === 'ar' ? 8 : -8 }"
+              :enter="{ opacity: 1, x: 0, transition: { delay: 40 + i * 20 } }"
+              class="hover:bg-neutral-50/60 dark:hover:bg-neutral-800/40 transition-colors"
+            >
+              <td class="px-4 py-2.5">
+                <p class="text-sm text-neutral-900 dark:text-neutral-0">{{ locale === 'ar' ? nt.labelAr : nt.labelEn }}</p>
+              </td>
+              <td v-for="ch in channels" :key="ch.key" class="px-4 py-2.5 text-center">
+                <button
+                  type="button"
+                  role="switch"
+                  :aria-checked="isEnabled(nt.key, ch.key)"
+                  class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:ring-offset-1"
+                  :class="isEnabled(nt.key, ch.key)
+                    ? 'bg-primary-500'
+                    : 'bg-neutral-200 dark:bg-neutral-700'"
+                  @click="toggle(nt.key, ch.key)"
+                >
+                  <span
+                    class="inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transform transition-transform duration-200"
+                    :class="isEnabled(nt.key, ch.key)
+                      ? (locale === 'ar' ? '-translate-x-4' : 'translate-x-[18px]')
+                      : (locale === 'ar' ? '-translate-x-1' : 'translate-x-1')"
+                  />
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p v-if="!loading" class="text-[11px] text-neutral-400 mt-3 flex items-center gap-1">
+        <UIcon name="i-lucide-info" class="w-3 h-3" />
+        {{ locale === 'ar' ? 'يتم حفظ التغييرات تلقائياً' : 'Changes save automatically' }}
+      </p>
+    </div>
+  </FeatureBoundary>
 </template>
 
 <script setup lang="ts">
-definePageMeta({
-  
-  layout: false,
-})
+definePageMeta({ layout: 'dashboard' })
 
 const { locale } = useI18n()
 const api = useApi()
 const toastStore = useToastStore()
 
-// --- Channel definitions ---
+// Channel icons replaced with Lucide refs so they pick up the active text
+// color and dark-mode tokens instead of riding on emoji rendering.
 const channels = [
-  { key: 'email', labelEn: 'Email', labelAr: '\u0628\u0631\u064A\u062F \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A', icon: '\u2709\uFE0F' },
-  { key: 'database', labelEn: 'App', labelAr: '\u0627\u0644\u062A\u0637\u0628\u064A\u0642', icon: '\u{1F514}' },
-  { key: 'sms', labelEn: 'SMS', labelAr: '\u0631\u0633\u0627\u0626\u0644 \u0642\u0635\u064A\u0631\u0629', icon: '\u{1F4F1}' },
+  { key: 'email',    labelEn: 'Email', labelAr: 'بريد إلكتروني', icon: 'i-lucide-mail' },
+  { key: 'database', labelEn: 'App',   labelAr: 'التطبيق',        icon: 'i-lucide-bell' },
+  { key: 'sms',      labelEn: 'SMS',   labelAr: 'رسائل قصيرة',    icon: 'i-lucide-smartphone' },
 ]
 
-// --- Notification type definitions ---
 const notificationTypes = [
-  { key: 'invoice_sent', labelEn: 'Invoice Sent', labelAr: '\u0625\u0631\u0633\u0627\u0644 \u0641\u0627\u062A\u0648\u0631\u0629' },
-  { key: 'payment_received', labelEn: 'Payment Received', labelAr: '\u0627\u0633\u062A\u0644\u0627\u0645 \u062F\u0641\u0639\u0629' },
-  { key: 'invoice_overdue', labelEn: 'Invoice Overdue', labelAr: '\u0641\u0627\u062A\u0648\u0631\u0629 \u0645\u062A\u0623\u062E\u0631\u0629' },
-  { key: 'team_invite', labelEn: 'Team Invitation', labelAr: '\u062F\u0639\u0648\u0629 \u0641\u0631\u064A\u0642' },
-  { key: 'document_shared', labelEn: 'Document Shared', labelAr: '\u0645\u0633\u062A\u0646\u062F \u0645\u0634\u062A\u0631\u0643' },
-  { key: 'eta_status_change', labelEn: 'ETA Status Change', labelAr: '\u062A\u063A\u064A\u064A\u0631 \u062D\u0627\u0644\u0629 ETA' },
-  { key: 'payroll_ready', labelEn: 'Payroll Ready', labelAr: '\u0643\u0634\u0641 \u0627\u0644\u0645\u0631\u062A\u0628\u0627\u062A \u062C\u0627\u0647\u0632' },
-  { key: 'timesheet_approved', labelEn: 'Timesheet Approved', labelAr: '\u0627\u0639\u062A\u0645\u0627\u062F \u062C\u062F\u0648\u0644 \u0623\u0639\u0645\u0627\u0644' },
-  { key: 'timesheet_rejected', labelEn: 'Timesheet Rejected', labelAr: '\u0631\u0641\u0636 \u062C\u062F\u0648\u0644 \u0623\u0639\u0645\u0627\u0644' },
+  { key: 'invoice_sent',        labelEn: 'Invoice Sent',       labelAr: 'إرسال فاتورة' },
+  { key: 'payment_received',    labelEn: 'Payment Received',   labelAr: 'استلام دفعة' },
+  { key: 'invoice_overdue',     labelEn: 'Invoice Overdue',    labelAr: 'فاتورة متأخرة' },
+  { key: 'team_invite',         labelEn: 'Team Invitation',    labelAr: 'دعوة فريق' },
+  { key: 'document_shared',     labelEn: 'Document Shared',    labelAr: 'مستند مشترك' },
+  { key: 'eta_status_change',   labelEn: 'ETA Status Change',  labelAr: 'تغيير حالة ETA' },
+  { key: 'payroll_ready',       labelEn: 'Payroll Ready',      labelAr: 'كشف المرتبات جاهز' },
+  { key: 'timesheet_approved',  labelEn: 'Timesheet Approved', labelAr: 'اعتماد جدول أعمال' },
+  { key: 'timesheet_rejected',  labelEn: 'Timesheet Rejected', labelAr: 'رفض جدول أعمال' },
 ]
 
-// --- State ---
 type PreferencesMap = Record<string, Record<string, boolean>>
 
 const loading = ref(true)
@@ -129,20 +137,16 @@ const saveStatus = ref<'saving' | 'saved' | 'error' | null>(null)
 let saveTimeout: ReturnType<typeof setTimeout> | null = null
 let statusClearTimeout: ReturnType<typeof setTimeout> | null = null
 
-// --- Helpers ---
 function isEnabled(type: string, channel: string): boolean {
   return preferences.value[type]?.[channel] ?? false
 }
 
 function toggle(type: string, channel: string) {
-  if (!preferences.value[type]) {
-    preferences.value[type] = {}
-  }
+  if (!preferences.value[type]) preferences.value[type] = {}
   preferences.value[type][channel] = !isEnabled(type, channel)
   debouncedSave()
 }
 
-// --- Fetch ---
 async function fetchPreferences() {
   loading.value = true
   try {
@@ -156,18 +160,18 @@ async function fetchPreferences() {
     }
     preferences.value = map
   } catch {
-    toastStore.error(locale.value === 'ar' ? '\u0641\u0634\u0644 \u062A\u062D\u0645\u064A\u0644 \u0627\u0644\u0625\u0639\u062F\u0627\u062F\u0627\u062A' : 'Failed to load preferences')
+    toastStore.error(locale.value === 'ar' ? 'فشل تحميل الإعدادات' : 'Failed to load preferences')
   } finally {
     loading.value = false
   }
 }
 
-// --- Save (debounced) ---
+// Debounce so a burst of toggle clicks coalesces into one PUT instead of
+// hammering the API. 600ms is short enough to feel autosaved, long enough
+// to batch a row of toggles flipped together.
 function debouncedSave() {
   if (saveTimeout) clearTimeout(saveTimeout)
-  saveTimeout = setTimeout(() => {
-    savePreferences()
-  }, 600)
+  saveTimeout = setTimeout(savePreferences, 600)
 }
 
 async function savePreferences() {
@@ -186,11 +190,9 @@ async function savePreferences() {
     saveStatus.value = 'saved'
   } catch {
     saveStatus.value = 'error'
-    toastStore.error(locale.value === 'ar' ? '\u0641\u0634\u0644 \u062D\u0641\u0638 \u0627\u0644\u0625\u0639\u062F\u0627\u062F\u0627\u062A' : 'Failed to save preferences')
+    toastStore.error(locale.value === 'ar' ? 'فشل حفظ الإعدادات' : 'Failed to save preferences')
   } finally {
-    statusClearTimeout = setTimeout(() => {
-      saveStatus.value = null
-    }, 2000)
+    statusClearTimeout = setTimeout(() => { saveStatus.value = null }, 2000)
   }
 }
 
@@ -200,7 +202,7 @@ onMounted(fetchPreferences)
 <style scoped>
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.3s ease;
+  transition: opacity 0.2s ease;
 }
 .fade-enter-from,
 .fade-leave-to {

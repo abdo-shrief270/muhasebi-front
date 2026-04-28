@@ -1,24 +1,37 @@
 <template>
   <div>
-    <div class="flex border-b border-gray-100 gap-1 mb-6">
+    <div
+      class="flex items-center gap-0.5 border-b border-neutral-200 dark:border-neutral-800 mb-5 overflow-x-auto scrollbar-hide"
+      role="tablist"
+    >
       <button
         v-for="tab in tabs"
         :key="tab.key"
+        type="button"
+        role="tab"
+        :aria-selected="modelValue === tab.key"
         @click="$emit('update:modelValue', tab.key)"
-        class="px-4 py-2.5 text-sm font-medium rounded-t-lg transition-all relative"
+        class="relative inline-flex items-center gap-1.5 h-9 px-3 text-xs font-medium transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 rounded-t-md"
         :class="modelValue === tab.key
-          ? 'text-primary-500'
-          : 'text-gray-400 hover:text-gray-600'
-        "
+          ? 'text-primary-700 dark:text-primary-300'
+          : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/40'"
       >
-        {{ tab.label }}
-        <span v-if="tab.count !== undefined" class="ms-1.5 text-xs bg-gray-100 text-gray-500 rounded-full px-1.5 py-0.5">
+        <UIcon v-if="tab.icon" :name="tab.icon" class="w-3.5 h-3.5 flex-shrink-0" />
+        <span>{{ tab.label }}</span>
+        <span
+          v-if="tab.count !== undefined"
+          class="ms-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-semibold rounded-sm tabular-nums"
+          :class="modelValue === tab.key
+            ? 'bg-primary-500/15 text-primary-700 dark:text-primary-300'
+            : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400'"
+        >
           {{ tab.count }}
         </span>
-        <div
+        <span
           v-if="modelValue === tab.key"
-          class="absolute bottom-0 start-0 end-0 h-0.5 bg-primary-500 rounded-t"
-        ></div>
+          class="absolute -bottom-px start-0 end-0 h-0.5 bg-primary-500 rounded-t-full"
+          aria-hidden="true"
+        />
       </button>
     </div>
     <slot />
@@ -28,10 +41,15 @@
 <script setup lang="ts">
 defineProps<{
   modelValue: string
-  tabs: { key: string; label: string; count?: number }[]
+  tabs: { key: string; label: string; count?: number; icon?: string }[]
 }>()
 
 defineEmits<{
   'update:modelValue': [value: string]
 }>()
 </script>
+
+<style scoped>
+.scrollbar-hide { scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+</style>

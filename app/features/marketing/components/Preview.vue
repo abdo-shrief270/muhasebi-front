@@ -63,7 +63,7 @@
             <div class="flex-1 flex justify-center">
               <div class="inline-flex items-center gap-2 bg-white rounded-lg px-6 py-1.5 text-sm text-gray-400 border border-gray-100 min-w-[300px] justify-center">
                 <svg class="w-3.5 h-3.5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" /></svg>
-                app.muhasebi.com/dashboard
+                muhasebi.com/dashboard
               </div>
             </div>
           </div>

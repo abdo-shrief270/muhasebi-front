@@ -1,7 +1,17 @@
 <template>
   <UApp>
     <NuxtLoadingIndicator color="var(--color-primary-500, #2c3e50)" :height="2" />
-    <NuxtPage />
+    <!--
+      `<NuxtLayout>` (no `name` prop) picks the layout up from each page's
+      `definePageMeta({ layout: '…' })`. Mounting it once here means the
+      layout chrome (sidebar, topbar, …) persists across client navigations
+      instead of being remounted by every page — which was the root cause
+      of the "blank page until refresh" bug, where page-leave + page-enter
+      transition Suspense got wedged on the inner layout instance.
+    -->
+    <NuxtLayout>
+      <NuxtPage />
+    </NuxtLayout>
     <UiOfflineIndicator />
   </UApp>
 </template>

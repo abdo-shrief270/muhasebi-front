@@ -1,0 +1,75 @@
+<template>
+  <FeatureBoundary id="asset-categories">
+    <div class="px-4 lg:px-6 py-5 max-w-[1400px] mx-auto">
+      <UiPageHeader
+        icon="i-lucide-tags"
+        :title="locale === 'ar' ? 'فئات الأصول الثابتة' : 'Asset Categories'"
+        :subtitle="locale === 'ar' ? 'تصنيفات الأصول والإعدادات الافتراضية للإهلاك' : 'Asset classifications and default depreciation settings'"
+      />
+
+      <Can :perm="PERMISSIONS.MANAGE_FIXED_ASSETS">
+        <template #fallback>
+          <div class="bg-neutral-0 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-12 text-center">
+            <div class="w-12 h-12 mx-auto mb-4 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
+              <UIcon name="i-lucide-lock" class="w-5 h-5 text-neutral-400" />
+            </div>
+            <p class="text-sm font-semibold text-neutral-900 dark:text-neutral-0">
+              {{ locale === 'ar' ? 'لا تملك صلاحية الوصول' : "You don't have access" }}
+            </p>
+          </div>
+        </template>
+
+        <UiDataTable
+          :columns="columns"
+          :rows="rows"
+          :loading="loading"
+          empty-icon="i-lucide-tags"
+          :empty-title="locale === 'ar' ? 'لا توجد فئات' : 'No categories defined'"
+          :empty-description="locale === 'ar'
+            ? 'الفئات (مباني، سيارات، حواسيب) تظهر هنا لتنظيم الأصول.'
+            : 'Categories (buildings, vehicles, computers) appear here to group assets.'"
+        >
+          <template #cell-code="{ value }">
+            <span class="font-mono text-xs text-primary-700 dark:text-primary-400">{{ value }}</span>
+          </template>
+          <template #cell-name="{ value }">
+            <span class="text-sm font-medium text-neutral-900 dark:text-neutral-0">{{ value }}</span>
+          </template>
+          <template #cell-default_useful_life_years="{ value }">
+            <span class="text-sm tabular-nums text-neutral-700 dark:text-neutral-200" dir="ltr">{{ value ?? '—' }}</span>
+          </template>
+          <template #cell-default_depreciation_method="{ value }">
+            <span class="text-sm text-neutral-700 dark:text-neutral-200 capitalize">{{ value ?? '—' }}</span>
+          </template>
+        </UiDataTable>
+      </Can>
+    </div>
+  </FeatureBoundary>
+</template>
+
+<script setup lang="ts">
+import Can from '~/core/rbac/Can.vue'
+import { PERMISSIONS } from '~/core/rbac/permissions'
+
+definePageMeta({ layout: 'dashboard' })
+const { locale } = useI18n()
+const api = useApi()
+const rows = ref<any[]>([])
+const loading = ref(true)
+
+const columns = computed(() => [
+  { key: 'code', label: locale.value === 'ar' ? 'الكود' : 'Code' },
+  { key: 'name', label: locale.value === 'ar' ? 'الاسم' : 'Name' },
+  { key: 'default_useful_life_years', label: locale.value === 'ar' ? 'العمر (سنوات)' : 'Life (yrs)' },
+  { key: 'default_depreciation_method', label: locale.value === 'ar' ? 'الإهلاك' : 'Depreciation' },
+])
+
+async function load() {
+  loading.value = true
+  try {
+    const r: any = await api.get('/asset-categories').catch(() => ({ data: [] }))
+    rows.value = Array.isArray(r) ? r : (r.data ?? [])
+  } catch { rows.value = [] } finally { loading.value = false }
+}
+onMounted(load)
+</script>

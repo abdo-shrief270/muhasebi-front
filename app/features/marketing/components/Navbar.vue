@@ -28,6 +28,18 @@
         >
           {{ link.label }}
         </a>
+        <!-- Full feature tour — opens dedicated /features page rather than
+             scrolling to a section on the home page. -->
+        <NuxtLink
+          to="/features"
+          class="px-4 py-2 text-sm font-medium rounded-xl transition-all duration-200 inline-flex items-center gap-1.5"
+          :class="scrolled ? 'text-gray-600 hover:text-primary-500 hover:bg-primary-50' : 'text-gray-700 hover:text-primary-500 hover:bg-white/50'"
+        >
+          {{ locale === 'ar' ? 'الميزات الكاملة' : 'All Features' }}
+          <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary-50 text-primary-700">
+            {{ locale === 'ar' ? 'جديد' : 'NEW' }}
+          </span>
+        </NuxtLink>
       </div>
 
       <!-- Desktop Actions -->
@@ -89,6 +101,13 @@
           >
             {{ link.label }}
           </a>
+          <NuxtLink
+            to="/features"
+            @click="mobileOpen = false"
+            class="block px-4 py-3 text-sm font-medium text-gray-600 hover:text-primary-500 hover:bg-primary-50 rounded-xl transition"
+          >
+            {{ locale === 'ar' ? 'الميزات الكاملة' : 'All Features' }}
+          </NuxtLink>
           <div class="pt-3 border-t border-gray-100 flex flex-col gap-2">
             <button @click="toggleLocale" class="text-sm text-gray-400 hover:text-gray-600 px-4 py-2 text-start">
               {{ locale === 'ar' ? 'English' : 'العربية' }}

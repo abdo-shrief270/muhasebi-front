@@ -1,6 +1,5 @@
 <template>
   <div>
-    <NuxtLayout name="public">
       <div class="max-w-3xl mx-auto px-6 py-12">
         <div v-if="loading" class="space-y-4">
           <UiLoadingSkeleton :lines="1" :height="40" />
@@ -26,12 +25,11 @@
           </div>
         </article>
       </div>
-    </NuxtLayout>
   </div>
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: false })
+definePageMeta({ layout: 'public' })
 
 const { locale } = useI18n()
 const { getPage } = usePages()

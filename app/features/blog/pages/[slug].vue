@@ -1,6 +1,5 @@
 <template>
   <div>
-    <NuxtLayout name="public">
       <div class="max-w-4xl mx-auto px-6 py-12">
         <div v-if="loading" class="space-y-4">
           <UiLoadingSkeleton :lines="1" :height="40" />
@@ -43,11 +42,12 @@
             <img :src="post.cover_image" :alt="isAr ? post.title.ar : post.title.en" class="w-full h-auto" />
           </div>
 
-          <!-- Content -->
+          <!-- Content. Sanitized via shared sanitize() util before v-html so a
+               backend regression can't become stored XSS. -->
           <article
             class="prose prose-lg prose-gray max-w-none prose-headings:font-bold prose-a:text-primary-500 prose-img:rounded-xl"
             :class="isAr ? 'prose-rtl' : ''"
-            v-html="isAr ? post.content.ar : post.content.en"
+            v-html="safeContent"
           ></article>
 
           <!-- Tags -->
@@ -85,14 +85,14 @@
           <NuxtLink to="/blog" class="text-primary-500 text-sm hover:underline">{{ isAr ? 'العودة للمدونة' : 'Back to Blog' }}</NuxtLink>
         </div>
       </div>
-    </NuxtLayout>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { BlogPost } from '~/features/blog/composables/useBlog'
+import { sanitizeHtml } from '~/shared/utils/sanitize'
 
-definePageMeta({ layout: false })
+definePageMeta({ layout: 'public' })
 
 const { locale } = useI18n()
 const route = useRoute()
@@ -101,6 +101,11 @@ const { getPost } = useBlog()
 const isAr = computed(() => locale.value === 'ar')
 const post = ref<BlogPost | null>(null)
 const loading = ref(true)
+
+const safeContent = computed(() => {
+  if (!post.value) return ''
+  return sanitizeHtml(isAr.value ? post.value.content.ar : post.value.content.en)
+})
 
 function formatDate(date: string) {
   return new Date(date).toLocaleDateString(isAr.value ? 'ar-EG' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })

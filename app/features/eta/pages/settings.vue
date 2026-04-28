@@ -1,99 +1,125 @@
 <template>
-  <div>
-    <NuxtLayout name="dashboard">
-      <FeatureBoundary id="eta">
-      <UiPageHeader :title="locale === 'ar' ? 'إعدادات الفوترة الإلكترونية' : 'E-Invoice Settings'" />
+  <FeatureBoundary id="eta">
+    <div class="px-4 lg:px-6 py-5 max-w-[1400px] mx-auto">
+      <UiPageHeader
+        icon="i-lucide-settings-2"
+        :title="locale === 'ar' ? 'إعدادات الفوترة الإلكترونية' : 'E-Invoice Settings'"
+        :subtitle="locale === 'ar' ? 'بيانات الاعتماد والفرع للربط مع مصلحة الضرائب' : 'API credentials and branch info for ETA integration'"
+      />
 
-      <div v-if="loading" class="max-w-2xl"><UiLoadingSkeleton :lines="8" :height="24" /></div>
+      <div v-if="loading" class="max-w-3xl">
+        <UiLoadingSkeleton :lines="8" :height="24" />
+      </div>
 
-      <form v-else @submit.prevent="handleSave" class="max-w-2xl space-y-6">
+      <form v-else @submit.prevent="handleSave" class="max-w-3xl space-y-3">
         <!-- Enable toggle -->
-        <div v-motion :initial="{ opacity: 0, y: 15 }" :enter="{ opacity: 1, y: 0 }" class="bg-white rounded-2xl border border-gray-100/80 p-6">
-          <div class="flex items-center justify-between">
-            <div>
-              <h3 class="font-semibold text-gray-700">{{ locale === 'ar' ? 'تفعيل الفوترة الإلكترونية' : 'Enable E-Invoicing' }}</h3>
-              <p class="text-sm text-gray-400 mt-0.5">{{ locale === 'ar' ? 'تفعيل الربط مع مصلحة الضرائب' : 'Enable ETA API integration' }}</p>
+        <div class="bg-neutral-0 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
+          <div class="flex items-center justify-between gap-4">
+            <div class="min-w-0">
+              <h3 class="text-sm font-semibold text-neutral-900 dark:text-neutral-0">
+                {{ locale === 'ar' ? 'تفعيل الفوترة الإلكترونية' : 'Enable E-Invoicing' }}
+              </h3>
+              <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                {{ locale === 'ar' ? 'تفعيل الربط مع مصلحة الضرائب المصرية' : 'Enable ETA API integration' }}
+              </p>
             </div>
-            <label class="relative inline-flex items-center cursor-pointer">
+            <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
               <input v-model="form.is_enabled" type="checkbox" class="sr-only peer" />
-              <div class="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-primary-500/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-500"></div>
+              <div class="w-10 h-5 bg-neutral-200 dark:bg-neutral-700 peer-focus:ring-2 peer-focus:ring-primary-500/30 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-500"></div>
             </label>
           </div>
         </div>
 
         <!-- Credentials -->
-        <div v-motion :initial="{ opacity: 0, y: 15 }" :enter="{ opacity: 1, y: 0, transition: { delay: 100 } }" class="bg-white rounded-2xl border border-gray-100/80 p-6">
-          <h3 class="font-semibold text-gray-700 mb-4">{{ locale === 'ar' ? 'بيانات الاعتماد' : 'API Credentials' }}</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="form-label">{{ locale === 'ar' ? 'البيئة' : 'Environment' }}</label>
-              <select v-model="form.environment" class="input-field">
-                <option value="preprod">Preprod (Testing)</option>
-                <option value="production">Production</option>
-              </select>
-            </div>
-            <div>
-              <label class="form-label">{{ locale === 'ar' ? 'كود النشاط' : 'Activity Code' }}</label>
-              <input v-model="form.activity_code" type="text" class="input-field" dir="ltr" />
-            </div>
-            <div>
-              <label class="form-label">Client ID</label>
-              <input v-model="form.client_id" type="text" class="input-field" dir="ltr" />
-            </div>
-            <div>
-              <label class="form-label">Client Secret</label>
-              <input v-model="form.client_secret" type="password" class="input-field" dir="ltr" :placeholder="settings?.has_client_secret ? '••••••••' : ''" />
-            </div>
-          </div>
-          <div class="mt-3 flex items-center gap-2">
+        <div class="bg-neutral-0 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-semibold text-neutral-900 dark:text-neutral-0 flex items-center gap-1.5">
+              <UIcon name="i-lucide-key-round" class="w-3.5 h-3.5 text-neutral-400" />
+              {{ locale === 'ar' ? 'بيانات الاعتماد' : 'API Credentials' }}
+            </h3>
             <UiBadge :color="settings?.token_valid ? 'green' : 'gray'" dot>
               {{ settings?.token_valid ? (locale === 'ar' ? 'متصل' : 'Connected') : (locale === 'ar' ? 'غير متصل' : 'Not connected') }}
             </UiBadge>
           </div>
-        </div>
 
-        <!-- Branch info -->
-        <div v-motion :initial="{ opacity: 0, y: 15 }" :enter="{ opacity: 1, y: 0, transition: { delay: 200 } }" class="bg-white rounded-2xl border border-gray-100/80 p-6">
-          <h3 class="font-semibold text-gray-700 mb-4">{{ locale === 'ar' ? 'بيانات الفرع' : 'Branch Information' }}</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label class="form-label">{{ locale === 'ar' ? 'رقم الفرع' : 'Branch ID' }}</label>
-              <input v-model="form.branch_id" type="text" class="input-field" dir="ltr" />
+              <label class="eta-label">{{ locale === 'ar' ? 'البيئة' : 'Environment' }}</label>
+              <div class="relative">
+                <select v-model="form.environment" class="eta-input">
+                  <option value="preprod">Preprod (Testing)</option>
+                  <option value="production">Production</option>
+                </select>
+                <UIcon name="i-lucide-chevron-down" class="absolute end-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400 pointer-events-none" />
+              </div>
             </div>
             <div>
-              <label class="form-label">{{ locale === 'ar' ? 'الاسم التجاري' : 'Trade Name' }}</label>
-              <input v-model="form.company_trade_name" type="text" class="input-field" />
+              <label class="eta-label">{{ locale === 'ar' ? 'كود النشاط' : 'Activity Code' }}</label>
+              <input v-model="form.activity_code" type="text" class="eta-input font-mono" dir="ltr" />
             </div>
             <div>
-              <label class="form-label">{{ locale === 'ar' ? 'المحافظة' : 'Governate' }}</label>
-              <input v-model="form.branch_address_governate" type="text" class="input-field" />
+              <label class="eta-label">Client ID</label>
+              <input v-model="form.client_id" type="text" class="eta-input font-mono" dir="ltr" />
             </div>
             <div>
-              <label class="form-label">{{ locale === 'ar' ? 'المدينة' : 'City' }}</label>
-              <input v-model="form.branch_address_region_city" type="text" class="input-field" />
-            </div>
-            <div>
-              <label class="form-label">{{ locale === 'ar' ? 'الشارع' : 'Street' }}</label>
-              <input v-model="form.branch_address_street" type="text" class="input-field" />
-            </div>
-            <div>
-              <label class="form-label">{{ locale === 'ar' ? 'رقم المبنى' : 'Building Number' }}</label>
-              <input v-model="form.branch_address_building_number" type="text" class="input-field" />
+              <label class="eta-label">Client Secret</label>
+              <input
+                v-model="form.client_secret"
+                type="password"
+                class="eta-input font-mono"
+                dir="ltr"
+                :placeholder="settings?.has_client_secret ? '••••••••' : ''"
+              />
             </div>
           </div>
         </div>
 
-        <UiAppButton type="submit" variant="primary" :loading="saving">{{ $t('common.save') }}</UiAppButton>
+        <!-- Branch info -->
+        <div class="bg-neutral-0 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
+          <h3 class="text-sm font-semibold text-neutral-900 dark:text-neutral-0 mb-3 flex items-center gap-1.5">
+            <UIcon name="i-lucide-building-2" class="w-3.5 h-3.5 text-neutral-400" />
+            {{ locale === 'ar' ? 'بيانات الفرع' : 'Branch Information' }}
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="eta-label">{{ locale === 'ar' ? 'رقم الفرع' : 'Branch ID' }}</label>
+              <input v-model="form.branch_id" type="text" class="eta-input font-mono" dir="ltr" />
+            </div>
+            <div>
+              <label class="eta-label">{{ locale === 'ar' ? 'الاسم التجاري' : 'Trade Name' }}</label>
+              <input v-model="form.company_trade_name" type="text" class="eta-input" />
+            </div>
+            <div>
+              <label class="eta-label">{{ locale === 'ar' ? 'المحافظة' : 'Governate' }}</label>
+              <input v-model="form.branch_address_governate" type="text" class="eta-input" />
+            </div>
+            <div>
+              <label class="eta-label">{{ locale === 'ar' ? 'المدينة' : 'City' }}</label>
+              <input v-model="form.branch_address_region_city" type="text" class="eta-input" />
+            </div>
+            <div>
+              <label class="eta-label">{{ locale === 'ar' ? 'الشارع' : 'Street' }}</label>
+              <input v-model="form.branch_address_street" type="text" class="eta-input" />
+            </div>
+            <div>
+              <label class="eta-label">{{ locale === 'ar' ? 'رقم المبنى' : 'Building Number' }}</label>
+              <input v-model="form.branch_address_building_number" type="text" class="eta-input font-mono" dir="ltr" />
+            </div>
+          </div>
+        </div>
+
+        <UiAppButton type="submit" variant="primary" icon="i-lucide-save" :loading="saving">
+          {{ $t('common.save') }}
+        </UiAppButton>
       </form>
-      </FeatureBoundary>
-    </NuxtLayout>
-  </div>
+    </div>
+  </FeatureBoundary>
 </template>
 
 <script setup lang="ts">
 import type { EtaSettings } from '~/features/eta/composables/useEta'
 
-definePageMeta({ layout: false })
+definePageMeta({ layout: 'dashboard' })
 const { locale } = useI18n()
 const { getSettings, updateSettings } = useEta()
 const toastStore = useToastStore()
@@ -116,7 +142,7 @@ async function loadSettings() {
     Object.assign(form, {
       is_enabled: settings.value.is_enabled,
       environment: settings.value.environment,
-      client_id: '', // Masked from server
+      client_id: '',
       activity_code: settings.value.activity_code || '',
       company_trade_name: settings.value.company_trade_name || '',
       branch_id: settings.value.branch_id || '0',
@@ -146,6 +172,29 @@ onMounted(loadSettings)
 
 <style scoped>
 @reference "~/assets/css/tokens.css";
-.input-field { @apply w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all text-sm bg-gray-50/50; }
-.form-label { @apply block text-sm font-medium text-gray-600 mb-1; }
+
+.eta-label { @apply block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5; }
+
+.eta-input {
+  width: 100%;
+  padding-inline: 0.75rem;
+  height: 2.25rem;
+  font-size: 0.875rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-neutral-200);
+  background-color: var(--color-neutral-0, #fff);
+  color: var(--color-neutral-900);
+  outline: none;
+  transition: border-color 150ms var(--ease-standard);
+  appearance: none;
+}
+.eta-input:focus {
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary-500) 20%, transparent);
+}
+:global(html.dark) .eta-input {
+  background-color: var(--color-neutral-900);
+  border-color: var(--color-neutral-800);
+  color: var(--color-neutral-0);
+}
 </style>

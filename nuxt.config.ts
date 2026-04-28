@@ -1,5 +1,5 @@
 import { fileURLToPath } from 'node:url'
-import { readdirSync, existsSync } from 'node:fs'
+import { readdirSync, existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 function featureDirs(sub: string): string[] {
@@ -9,6 +9,22 @@ function featureDirs(sub: string): string[] {
     .filter(d => d.isDirectory())
     .map(d => join(root, d.name, sub))
     .filter(existsSync)
+}
+
+/**
+ * Read a feature's `routePrefix` from its feature.ts by regex. The hook runs
+ * synchronously during config load so we can't dynamic-import the manifest.
+ * Falls back to `/<folder-name>` so a feature without a manifest still mounts
+ * under its folder name instead of colliding at `/`.
+ */
+function readFeatureRoutePrefix(featureDir: string, folderName: string): string {
+  const manifest = join(featureDir, 'feature.ts')
+  if (existsSync(manifest)) {
+    const src = readFileSync(manifest, 'utf8')
+    const m = /routePrefix\s*:\s*['"`]([^'"`]+)['"`]/.exec(src)
+    if (m) return m[1]
+  }
+  return `/${folderName}`
 }
 
 export default defineNuxtConfig({
@@ -45,6 +61,14 @@ export default defineNuxtConfig({
       // <UiPageHeader>, etc. The `Ui` prefix must be declared here — the files in
       // shared/ui/ are named AppButton.vue, SlideOver.vue, … without the prefix.
       { path: '~/shared/ui', prefix: 'Ui', pathPrefix: false },
+      // The marketing landing page uses <LandingNavbar>, <LandingHero>, … style
+      // references (features/marketing/pages/index.vue) but the files are
+      // named Navbar.vue, Hero.vue, … without a prefix. Register the folder
+      // once with the `Landing` prefix so those references resolve. The
+      // unprefixed auto-registration via `featureDirs('components')` below
+      // still picks them up as `<Navbar>`, `<Hero>`, … for any code that uses
+      // the bare names.
+      { path: '~/features/marketing/components', prefix: 'Landing', pathPrefix: false },
       ...featureDirs('components').map(path => ({ path, pathPrefix: false })),
       { path: '~/core/rbac', pathPrefix: false, pattern: '**/*.vue' },
       { path: '~/core/subscription', pathPrefix: false, pattern: '**/*.vue' },
@@ -92,9 +116,14 @@ export default defineNuxtConfig({
       }
 
       for (const f of features) {
-        const pagesDir = join(root, f.name, 'pages')
+        const featureDir = join(root, f.name)
+        const pagesDir = join(featureDir, 'pages')
         if (!existsSync(pagesDir)) continue
-        walk(pagesDir, '/')
+        // Respect each feature's routePrefix so `features/auth/pages/login.vue`
+        // mounts at `/auth/login`, not `/login`, and the two dozen
+        // `pages/index.vue` files don't all collide at `/`.
+        const prefix = readFeatureRoutePrefix(featureDir, f.name)
+        walk(pagesDir, prefix)
       }
     },
   },
@@ -135,6 +164,15 @@ export default defineNuxtConfig({
           'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
         },
       },
+    },
+  },
+
+  // Vite 5+ blocks any Host header not on the allowlist. nginx proxies
+  // muhasebi.com → 127.0.0.1:3000, so the public hostnames must be listed
+  // or dev serves a "Blocked request" error instead of the app.
+  vite: {
+    server: {
+      allowedHosts: ['muhasebi.com', 'www.muhasebi.com', 'api.muhasebi.com', 'localhost', '127.0.0.1'],
     },
   },
 

@@ -5,7 +5,9 @@ export default {
   id: 'dashboard',
   routePrefix: '/dashboard',
   permission: PERMISSIONS.VIEW_DASHBOARD,
-  plans: ['starter', 'pro', 'business', 'enterprise'],
+  // Plan slugs match `config/plans` seeder: free_trial / starter / professional / enterprise.
+  // Dashboard hidden on free_trial only.
+  plans: ['starter', 'professional', 'enterprise'],
   navLabel: 'nav.dashboard',
   navIcon: 'dashboard',
   navGroup: 'main',

@@ -39,7 +39,9 @@ export const ENDPOINTS = {
   public: {
     plans:          '/plans',
     plan:           (planId: Id) => `/plans/${planId}`,
+    addOns:         '/add-ons',
     landing:        '/landing',
+    featureShowcase:'/landing/feature-showcase',
     page:           (slug: string) => `/pages/${slug}`,
     contact:        '/contact',
     health:         '/health',
@@ -95,6 +97,9 @@ export const ENDPOINTS = {
     usage:        '/subscription/usage',
     usageHistory: '/subscription/usage-history',
     payments:     '/subscription/payments',
+    addOns:       '/subscription/add-ons',
+    addOn:        (id: Id) => `/subscription/add-ons/${id}`,
+    credits:      '/subscription/credits',
   },
 
   /* ----------------------------------------------------------- 05 clients */
@@ -105,6 +110,23 @@ export const ENDPOINTS = {
     toggleActive: (id: Id) => `/clients/${id}/toggle-active`,
     messages:     (id: Id) => `/clients/${id}/messages`,
     invitePortal: (id: Id) => `/clients/${id}/invite-portal`,
+    products:     (id: Id) => `/clients/${id}/products`,
+    productsOne:  (clientId: Id, productId: Id) => `/clients/${clientId}/products/${productId}`,
+  },
+
+  bankAccounts: {
+    list: '/bank-accounts',
+    one:  (id: Id) => `/bank-accounts/${id}`,
+  },
+
+  catalog: {
+    /** Tenant-wide rollup of per-client products. */
+    clients: '/catalog',
+    /** Tenant-wide rollup of per-vendor products. */
+    vendors: '/vendor-catalog',
+    // Legacy alias preserved for callers that pre-date the rename — points
+    // at the client catalog. Remove once nothing references it.
+    list: '/catalog',
   },
 
   /* --------------------------------------------------- 06 accounting core */
@@ -219,10 +241,12 @@ export const ENDPOINTS = {
 
   /* --------------------------------------------------- 09 accounts payable */
   vendors: {
-    list:      '/vendors',
-    one:       (id: Id) => `/vendors/${id}`,
-    statement: (id: Id) => `/vendors/${id}/statement`,
-    aging:     '/vendors/reports/aging',
+    list:        '/vendors',
+    one:         (id: Id) => `/vendors/${id}`,
+    statement:   (id: Id) => `/vendors/${id}/statement`,
+    aging:       '/vendors/reports/aging',
+    products:    (vendorId: Id) => `/vendors/${vendorId}/products`,
+    productsOne: (vendorId: Id, productId: Id) => `/vendors/${vendorId}/products/${productId}`,
   },
   bills: {
     list:     '/bills',

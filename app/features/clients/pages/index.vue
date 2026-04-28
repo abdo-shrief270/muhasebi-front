@@ -1,11 +1,15 @@
 <template>
   <div>
-    <NuxtLayout name="dashboard">
       <FeatureBoundary id="clients">
-      <UiPageHeader :title="$t('nav.clients')" :subtitle="locale === 'ar' ? `${total} عميل` : `${total} clients`">
+      <div class="px-4 lg:px-6 py-5 max-w-[1400px] mx-auto">
+      <UiPageHeader
+        icon="i-lucide-users"
+        :title="$t('nav.clients')"
+        :subtitle="locale === 'ar' ? `${total} عميل` : `${total.toLocaleString()} clients`"
+      >
         <template #actions>
-          <UiAppButton variant="primary" @click="openCreate">
-            {{ locale === 'ar' ? '+ إضافة عميل' : '+ Add Client' }}
+          <UiAppButton variant="primary" icon="i-lucide-plus" @click="openCreate">
+            {{ locale === 'ar' ? 'إضافة عميل' : 'Add Client' }}
           </UiAppButton>
         </template>
       </UiPageHeader>
@@ -17,12 +21,16 @@
         :exportable="true"
         :current-page="currentPage"
         :total-pages="lastPage"
+        :total="total"
+        :per-page="perPage"
         :sort-by="sortBy"
         :sort-dir="sortDir"
+        empty-icon="i-lucide-users"
         :empty-title="locale === 'ar' ? 'لا يوجد عملاء' : 'No clients yet'"
         :empty-description="locale === 'ar' ? 'أضف أول عميل لك' : 'Add your first client'"
         @row-click="(row: any) => navigateTo(`/clients/${row.id}`)"
         @page-change="(p: number) => { page = p }"
+        @per-page-change="(pp: number) => { perPage = pp; page = 1 }"
         @sort="handleSort"
       >
         <template #header>
@@ -37,18 +45,25 @@
         </template>
 
         <template #cell-name="{ row }">
-          <div>
-            <p class="font-medium text-gray-800">{{ row.name }}</p>
-            <p v-if="row.trade_name" class="text-xs text-gray-400">{{ row.trade_name }}</p>
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div
+              class="w-7 h-7 rounded-md bg-primary-500/10 text-primary-700 dark:text-primary-300 inline-flex items-center justify-center text-[11px] font-semibold flex-shrink-0"
+            >
+              {{ row.name?.charAt(0)?.toUpperCase() || '?' }}
+            </div>
+            <div class="min-w-0">
+              <p class="text-sm font-medium text-neutral-900 dark:text-neutral-0 truncate">{{ row.name }}</p>
+              <p v-if="row.trade_name" class="text-[11px] text-neutral-500 dark:text-neutral-400 truncate">{{ row.trade_name }}</p>
+            </div>
           </div>
         </template>
 
         <template #cell-tax_id="{ value }">
-          <span class="font-mono text-xs text-gray-500" dir="ltr">{{ value || '-' }}</span>
+          <span class="font-mono text-xs text-neutral-600 dark:text-neutral-400" dir="ltr">{{ value || '—' }}</span>
         </template>
 
         <template #cell-city="{ value }">
-          <span class="text-gray-500">{{ value || '-' }}</span>
+          <span class="text-neutral-600 dark:text-neutral-400">{{ value || '—' }}</span>
         </template>
 
         <template #cell-is_active="{ row }">
@@ -58,17 +73,19 @@
         </template>
 
         <template #cell-actions="{ row }">
-          <div class="flex items-center gap-1" @click.stop>
+          <div class="flex items-center justify-end gap-0.5" @click.stop>
             <button
+              type="button"
               @click="openEdit(row)"
-              class="p-1.5 rounded-lg text-gray-400 hover:text-primary-500 hover:bg-primary-50 transition"
+              class="w-7 h-7 inline-flex items-center justify-center rounded-md text-neutral-400 hover:text-primary-600 hover:bg-primary-500/10 dark:hover:text-primary-400 transition-colors"
               :title="$t('common.edit')"
             >
-              &#9998;
+              <UIcon name="i-lucide-pencil" class="w-3.5 h-3.5" />
             </button>
           </div>
         </template>
       </UiDataTable>
+      </div>
 
       <UiSlideOver v-model="formOpen" :title="editingClient ? (locale === 'ar' ? 'تعديل العميل' : 'Edit Client') : (locale === 'ar' ? 'إضافة عميل' : 'Add Client')">
         <ClientForm
@@ -80,7 +97,6 @@
         />
       </UiSlideOver>
       </FeatureBoundary>
-    </NuxtLayout>
   </div>
 </template>
 
@@ -89,10 +105,12 @@ import type { Client, ClientForm as ClientFormType } from '~/shared/types/client
 import type { ApiError } from '~/core/api/errors'
 import type { ClientListParams } from '~/features/clients/services/clientService'
 
-definePageMeta({ layout: false })
+definePageMeta({ layout: 'dashboard' })
 
 const { locale } = useI18n()
 const toastStore = useToastStore()
+const route = useRoute()
+const router = useRouter()
 
 const searchInput = ref('')
 const search = refDebounced(searchInput, 400)
@@ -100,6 +118,7 @@ const statusFilter = ref('')
 const sortBy = ref('name')
 const sortDir = ref<'asc' | 'desc'>('asc')
 const page = ref(1)
+const perPage = ref(25)
 
 watch([search, statusFilter], () => { page.value = 1 })
 
@@ -109,6 +128,7 @@ const params = computed<ClientListParams>(() => ({
   sort_by: sortBy.value,
   sort_dir: sortDir.value,
   page: page.value,
+  per_page: perPage.value,
 }))
 
 const { data, loading } = useClientsList(params)
@@ -145,6 +165,16 @@ function openCreate() {
   editingClient.value = null
   formOpen.value = true
 }
+
+// Open the create slideover automatically when arriving with `?new=1` (e.g.
+// from the topbar's Quick-create menu). We strip the query param afterwards
+// so a refresh / back-nav doesn't keep retriggering the modal.
+onMounted(() => {
+  if (route.query.new === '1') {
+    openCreate()
+    router.replace({ query: { ...route.query, new: undefined } })
+  }
+})
 
 function openEdit(client: Client) {
   editingClient.value = client

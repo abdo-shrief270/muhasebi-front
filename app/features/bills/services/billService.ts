@@ -1,58 +1,126 @@
 import { ENDPOINTS } from '~/core/api/endpoints'
 import type { BaseListParams, ItemResponse, ListResponse } from '~/shared/types/common'
 
-export type BillStatus = 'draft' | 'pending_approval' | 'approved' | 'paid' | 'partial' | 'cancelled'
+/**
+ * Bill — aligned with backend `bills` table + BillResource. Money fields
+ * arrive as decimal strings (`'12345.67'`); the SPA casts to Number for
+ * display only.
+ *
+ * Status values exactly match BillStatus enum on the PHP side:
+ *   draft → approved | partially_paid → paid (or cancelled at any non-paid state)
+ */
+export type BillStatus = 'draft' | 'approved' | 'partially_paid' | 'paid' | 'cancelled'
+
+export interface BillVendorRef {
+  id: number
+  name_ar: string
+  name_en: string | null
+  currency: string
+}
+
+export interface BillLineAccountRef {
+  id: number
+  code: string | null
+  name: string | null
+}
 
 export interface BillLine {
   id?: number
-  description: string
-  quantity: number
-  unit_price: number
+  description: string | null
   account_id: number
-  cost_center_id?: number | null
-  project_id?: number | null
-  vat_rate?: number
-  wht_rate?: number
-  eta_item_code?: string | null
+  account?: BillLineAccountRef | null
+  quantity: number | string
+  unit_price: number | string
+  discount_percent: number | string
+  vat_rate: number | string
+  wht_rate: number | string
+  line_total?: number | string
+  vat_amount?: number | string
+  wht_amount?: number | string
+  total?: number | string
+  sort_order?: number
+}
+
+/**
+ * Wire values match the backend `payment_method` enum exactly:
+ *   cash | bank_transfer | check | mobile_wallet | other
+ *
+ * Note: backend uses `check` (US spelling), not `cheque`. `check_number` is
+ * required when `payment_method === 'check'` (validated server-side).
+ */
+export type BillPaymentMethod = 'cash' | 'bank_transfer' | 'check' | 'mobile_wallet' | 'other'
+
+export interface BillPayment {
+  id: number
+  amount: number | string
+  payment_date: string
+  payment_method: BillPaymentMethod
+  reference: string | null
+  check_number: string | null
+  notes: string | null
 }
 
 export interface Bill {
   id: number
+  tenant_id: number
   vendor_id: number
+
   bill_number: string
-  bill_date: string
+  date: string
   due_date: string
-  currency: string
-  exchange_rate: number
-  reference: string | null
-  notes: string | null
+
   status: BillStatus
-  subtotal: number
-  vat_total: number
-  wht_total: number
-  total: number
-  amount_paid: number
-  balance_due: number
-  attachments?: Array<{ id: number; name: string; url: string }>
+  status_label: string
+  status_label_ar: string
+  status_color: string
+
+  subtotal: number | string
+  vat_amount: number | string
+  wht_amount: number | string
+  total: number | string
+  amount_paid: number | string
+  balance_due: number | string
+
+  currency: string
+  notes: string | null
+
+  cancelled_at: string | null
+  cancelled_by: number | null
+  journal_entry_id: number | null
+
+  lines_count?: number
+  vendor?: BillVendorRef | null
   lines?: BillLine[]
   payments?: BillPayment[]
-  vendor?: { id: number; name: string }
+
   created_at: string
-  approved_at: string | null
-  cancelled_at: string | null
+  updated_at: string
 }
 
+/**
+ * Form payload for create/update. Backend `BillService::create` auto-generates
+ * `bill_number` so we never send it. `status` is set internally (always Draft
+ * on create) — the SPA transitions via /approve and /cancel actions, never
+ * via PUT.
+ */
 export interface BillForm {
   vendor_id: number
-  bill_number: string
-  bill_date: string
+  date: string
   due_date: string
   currency?: string
-  exchange_rate?: number
-  reference?: string
-  notes?: string
-  attachments?: number[]
-  lines: BillLine[]
+  notes?: string | null
+  lines: Array<{
+    description?: string | null
+    account_id: number
+    /** Optional FK to a saved vendor product. Drives `last_used_at` recency. */
+    vendor_product_id?: number | null
+    quantity: number
+    unit_price: number
+    discount_percent?: number
+    vat_rate?: number
+    wht_rate?: number
+    sort_order?: number
+  }>
 }
 
 export interface BillListParams extends BaseListParams {
@@ -64,28 +132,24 @@ export interface BillListParams extends BaseListParams {
   due_to?: string
 }
 
-export interface BillPayment {
-  id: number
-  bill_id: number
-  amount: number
-  payment_date: string
-  payment_method: 'cash' | 'bank_transfer' | 'cheque' | 'card'
-  bank_account_id: number | null
-  reference: string | null
-  wht_amount: number
-  notes: string | null
-  voided_at: string | null
-  created_at: string
-}
-
 export interface BillPaymentForm {
   amount: number
   payment_date: string
-  payment_method: BillPayment['payment_method']
-  bank_account_id?: number
-  reference?: string
-  wht_amount?: number
-  notes?: string
+  payment_method: BillPaymentMethod
+  /** Required when `payment_method === 'check'`. */
+  check_number?: string | null
+  reference?: string | null
+  notes?: string | null
+}
+
+/**
+ * Resolve a vendor ref's display name in the active locale, falling back
+ * across languages so a row never renders blank.
+ */
+export function billVendorName(v: BillVendorRef | null | undefined, locale: 'ar' | 'en' | string): string {
+  if (!v) return ''
+  if (locale === 'ar') return v.name_ar || v.name_en || ''
+  return v.name_en || v.name_ar || ''
 }
 
 function toQuery(p: Record<string, unknown>): string {
@@ -112,10 +176,10 @@ export function billService() {
     remove: (id: number) =>
       api.delete<void>(ENDPOINTS.bills.one(id)),
 
-    approve: (id: number, payload: { notes?: string } = {}, idempotencyKey?: string) =>
-      api.post<ItemResponse<Bill>>(ENDPOINTS.bills.approve(id), payload, { idempotencyKey }).then(r => r.data),
-    cancel: (id: number, payload: { reason: string }, idempotencyKey?: string) =>
-      api.post<ItemResponse<Bill>>(ENDPOINTS.bills.cancel(id), payload, { idempotencyKey }).then(r => r.data),
+    approve: (id: number, idempotencyKey?: string) =>
+      api.post<ItemResponse<Bill>>(ENDPOINTS.bills.approve(id), {}, { idempotencyKey }).then(r => r.data),
+    cancel: (id: number, idempotencyKey?: string) =>
+      api.post<ItemResponse<Bill>>(ENDPOINTS.bills.cancel(id), {}, { idempotencyKey }).then(r => r.data),
 
     listPayments: (id: number) =>
       api.get<{ data: BillPayment[] }>(ENDPOINTS.bills.payments(id)).then(r => r.data),

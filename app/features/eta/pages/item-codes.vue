@@ -1,11 +1,14 @@
 <template>
-  <div>
-    <NuxtLayout name="dashboard">
-      <FeatureBoundary id="eta">
-      <UiPageHeader :title="locale === 'ar' ? 'أكواد الأصناف' : 'Item Codes'">
+  <FeatureBoundary id="eta">
+    <div class="px-4 lg:px-6 py-5 max-w-[1400px] mx-auto">
+      <UiPageHeader
+        icon="i-lucide-barcode"
+        :title="locale === 'ar' ? 'أكواد الأصناف' : 'Item Codes'"
+        :subtitle="locale === 'ar' ? 'أكواد GS1/EGS المُعتمدة من مصلحة الضرائب' : 'GS1/EGS codes registered with ETA'"
+      >
         <template #actions>
-          <UiAppButton variant="primary" @click="openCreate">
-            {{ locale === 'ar' ? '+ إضافة كود' : '+ Add Code' }}
+          <UiAppButton variant="primary" size="sm" icon="i-lucide-plus" @click="openCreate">
+            {{ locale === 'ar' ? 'إضافة كود' : 'Add Code' }}
           </UiAppButton>
         </template>
       </UiPageHeader>
@@ -16,19 +19,31 @@
         :loading="loading"
         :current-page="meta.current_page"
         :total-pages="meta.last_page"
-        :empty-title="locale === 'ar' ? 'لا توجد أكواد' : 'No item codes'"
-        @page-change="(p) => { page = p; load() }"
+        empty-icon="i-lucide-barcode"
+        :empty-title="locale === 'ar' ? 'لا توجد أكواد' : 'No item codes yet'"
+        :empty-description="locale === 'ar'
+          ? 'أكواد الأصناف الموحّدة (EGS أو GS1) المطلوبة لإرسال الفواتير لمصلحة الضرائب.'
+          : 'Standardized item codes (EGS or GS1) required for ETA invoice submission.'"
+        @page-change="(p: number) => { page = p; load() }"
       >
         <template #header>
           <UiSearchInput v-model="search" class="flex-1 min-w-[200px]" @update:model-value="debouncedLoad" />
         </template>
 
         <template #cell-item_code="{ value }">
-          <span class="font-mono text-xs text-primary-500 font-semibold" dir="ltr">{{ value }}</span>
+          <span class="font-mono text-xs font-semibold text-primary-700 dark:text-primary-400" dir="ltr">{{ value }}</span>
         </template>
 
         <template #cell-code_type="{ value }">
-          <UiBadge :color="value === 'GS1' ? 'blue' : 'emerald'">{{ value }}</UiBadge>
+          <UiBadge :color="value === 'GS1' ? 'blue' : 'green'">{{ value }}</UiBadge>
+        </template>
+
+        <template #cell-description="{ value }">
+          <span class="text-sm text-neutral-900 dark:text-neutral-0">{{ value }}</span>
+        </template>
+
+        <template #cell-unit_type="{ value }">
+          <span class="font-mono text-xs text-neutral-500 dark:text-neutral-400" dir="ltr">{{ value || '—' }}</span>
         </template>
 
         <template #cell-is_active="{ row }">
@@ -39,67 +54,86 @@
 
         <template #cell-actions="{ row }">
           <div class="flex items-center gap-1" @click.stop>
-            <button @click="openEdit(row)" class="p-1.5 rounded-lg text-gray-400 hover:text-primary-500 hover:bg-primary-50 transition">&#9998;</button>
-            <button @click="handleDelete(row.id)" class="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition">&#10005;</button>
+            <button
+              type="button"
+              class="ic-action ic-action-edit"
+              :aria-label="locale === 'ar' ? 'تعديل' : 'Edit'"
+              @click="openEdit(row)"
+            >
+              <UIcon name="i-lucide-pencil" class="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              class="ic-action ic-action-delete"
+              :aria-label="locale === 'ar' ? 'حذف' : 'Delete'"
+              @click="handleDelete(row.id)"
+            >
+              <UIcon name="i-lucide-trash-2" class="w-3.5 h-3.5" />
+            </button>
           </div>
         </template>
       </UiDataTable>
 
       <!-- Create/Edit SlideOver -->
-      <UiSlideOver v-model="formOpen" :title="editing ? (locale === 'ar' ? 'تعديل كود' : 'Edit Code') : (locale === 'ar' ? 'إضافة كود' : 'Add Code')">
-        <form @submit.prevent="handleSubmit" class="space-y-4">
-          <div class="grid grid-cols-2 gap-4">
+      <UiSlideOver
+        v-model="formOpen"
+        :title="editing ? (locale === 'ar' ? 'تعديل كود' : 'Edit Code') : (locale === 'ar' ? 'إضافة كود' : 'Add Code')"
+      >
+        <form @submit.prevent="handleSubmit" class="space-y-3">
+          <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="form-label">{{ locale === 'ar' ? 'نوع الكود' : 'Code Type' }} *</label>
-              <select v-model="form.code_type" required class="input-field">
-                <option value="EGS">EGS</option>
-                <option value="GS1">GS1</option>
-              </select>
+              <label class="ic-label">{{ locale === 'ar' ? 'نوع الكود' : 'Code Type' }} <span class="text-danger-500">*</span></label>
+              <div class="relative">
+                <select v-model="form.code_type" required class="ic-input">
+                  <option value="EGS">EGS</option>
+                  <option value="GS1">GS1</option>
+                </select>
+                <UIcon name="i-lucide-chevron-down" class="absolute end-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400 pointer-events-none" />
+              </div>
             </div>
             <div>
-              <label class="form-label">{{ locale === 'ar' ? 'الكود' : 'Item Code' }} *</label>
-              <input v-model="form.item_code" type="text" required class="input-field" dir="ltr" />
+              <label class="ic-label">{{ locale === 'ar' ? 'الكود' : 'Item Code' }} <span class="text-danger-500">*</span></label>
+              <input v-model="form.item_code" type="text" required class="ic-input font-mono" dir="ltr" />
             </div>
           </div>
           <div>
-            <label class="form-label">{{ locale === 'ar' ? 'الوصف' : 'Description' }} *</label>
-            <input v-model="form.description" type="text" required class="input-field" />
+            <label class="ic-label">{{ locale === 'ar' ? 'الوصف' : 'Description' }} <span class="text-danger-500">*</span></label>
+            <input v-model="form.description" type="text" required class="ic-input" />
           </div>
           <div>
-            <label class="form-label">{{ locale === 'ar' ? 'الوصف بالعربية' : 'Arabic Description' }}</label>
-            <input v-model="form.description_ar" type="text" class="input-field" />
+            <label class="ic-label">{{ locale === 'ar' ? 'الوصف بالعربية' : 'Arabic Description' }}</label>
+            <input v-model="form.description_ar" type="text" class="ic-input" />
           </div>
-          <div class="grid grid-cols-3 gap-4">
+          <div class="grid grid-cols-3 gap-3">
             <div>
-              <label class="form-label">{{ locale === 'ar' ? 'وحدة القياس' : 'Unit Type' }}</label>
-              <input v-model="form.unit_type" type="text" class="input-field" dir="ltr" placeholder="EA" />
+              <label class="ic-label">{{ locale === 'ar' ? 'وحدة القياس' : 'Unit Type' }}</label>
+              <input v-model="form.unit_type" type="text" class="ic-input font-mono" dir="ltr" placeholder="EA" />
             </div>
             <div>
-              <label class="form-label">{{ locale === 'ar' ? 'نوع الضريبة' : 'Tax Type' }}</label>
-              <input v-model="form.default_tax_type" type="text" class="input-field" dir="ltr" placeholder="T1" />
+              <label class="ic-label">{{ locale === 'ar' ? 'نوع الضريبة' : 'Tax Type' }}</label>
+              <input v-model="form.default_tax_type" type="text" class="ic-input font-mono" dir="ltr" placeholder="T1" />
             </div>
             <div>
-              <label class="form-label">{{ locale === 'ar' ? 'نوع فرعي' : 'Subtype' }}</label>
-              <input v-model="form.default_tax_subtype" type="text" class="input-field" dir="ltr" placeholder="V009" />
+              <label class="ic-label">{{ locale === 'ar' ? 'نوع فرعي' : 'Subtype' }}</label>
+              <input v-model="form.default_tax_subtype" type="text" class="ic-input font-mono" dir="ltr" placeholder="V009" />
             </div>
           </div>
-          <div class="flex gap-3 pt-4 border-t border-gray-100">
-            <UiAppButton type="submit" variant="primary" :loading="formLoading">
+          <div class="flex gap-2 pt-3 border-t border-neutral-200 dark:border-neutral-800">
+            <UiAppButton type="submit" variant="primary" icon="i-lucide-save" :loading="formLoading">
               {{ editing ? $t('common.save') : $t('common.create') }}
             </UiAppButton>
             <UiAppButton variant="outline" @click="formOpen = false">{{ $t('common.cancel') }}</UiAppButton>
           </div>
         </form>
       </UiSlideOver>
-      </FeatureBoundary>
-    </NuxtLayout>
-  </div>
+    </div>
+  </FeatureBoundary>
 </template>
 
 <script setup lang="ts">
 import type { EtaItemCode } from '~/features/eta/composables/useEta'
 
-definePageMeta({ layout: false })
+definePageMeta({ layout: 'dashboard' })
 const { locale } = useI18n()
 const { getItemCodes, createItemCode, updateItemCode, deleteItemCode } = useEta()
 const toastStore = useToastStore()
@@ -180,6 +214,48 @@ onMounted(load)
 
 <style scoped>
 @reference "~/assets/css/tokens.css";
-.input-field { @apply w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all text-sm bg-gray-50/50; }
-.form-label { @apply block text-sm font-medium text-gray-600 mb-1; }
+
+.ic-label { @apply block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5; }
+
+.ic-input {
+  width: 100%;
+  padding-inline: 0.75rem;
+  height: 2.25rem;
+  font-size: 0.875rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-neutral-200);
+  background-color: var(--color-neutral-0, #fff);
+  color: var(--color-neutral-900);
+  outline: none;
+  transition: border-color 150ms var(--ease-standard);
+  appearance: none;
+}
+.ic-input:focus {
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary-500) 20%, transparent);
+}
+:global(html.dark) .ic-input {
+  background-color: var(--color-neutral-900);
+  border-color: var(--color-neutral-800);
+  color: var(--color-neutral-0);
+}
+
+.ic-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--radius-sm);
+  color: var(--color-neutral-400);
+  transition: color 150ms var(--ease-standard), background-color 150ms var(--ease-standard);
+}
+.ic-action-edit:hover {
+  color: var(--color-primary-600);
+  background-color: color-mix(in oklab, var(--color-primary-500) 12%, transparent);
+}
+.ic-action-delete:hover {
+  color: var(--color-danger-600);
+  background-color: color-mix(in oklab, var(--color-danger-500) 12%, transparent);
+}
 </style>

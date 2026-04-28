@@ -202,10 +202,67 @@ html {
 }
 .dark .text-gray-700 { color: #e2e8f0 !important; }
 .dark .text-gray-800 { color: #f1f5f9 !important; }
+.dark .text-gray-900 { color: #f8fafc !important; }
 .dark .text-gray-600 { color: #cbd5e1 !important; }
 .dark .text-gray-500 { color: #94a3b8 !important; }
 .dark .text-gray-400 { color: #64748b !important; }
 .dark .text-gray-300 { color: #475569 !important; }
+.dark .text-black { color: #f1f5f9 !important; }
+
+/* Slightly lighter neutral surface for denser panels/chips (gray-100). */
+.dark .bg-gray-100,
+.dark .bg-gray-100\/50,
+.dark .bg-gray-200,
+.dark .bg-gray-200\/50 {
+  background-color: #334155 !important;
+}
+
+/* Hover states on neutral surfaces — without these, dark-mode hover lifts
+ * back to the light-theme gray and flashes. */
+.dark .hover\:bg-gray-50:hover,
+.dark .hover\:bg-gray-50\/30:hover,
+.dark .hover\:bg-gray-50\/50:hover,
+.dark .hover\:bg-gray-50\/80:hover {
+  background-color: #334155 !important;
+}
+.dark .hover\:bg-gray-100:hover,
+.dark .hover\:bg-gray-100\/50:hover {
+  background-color: #475569 !important;
+}
+
+/* Selected-row / active-nav tints derived from primary — replace the light
+ * `primary-50` wash with a translucent primary so the selection still reads
+ * in dark mode without glowing white. */
+.dark .bg-primary-50,
+.dark .bg-primary-50\/30,
+.dark .bg-primary-50\/50 {
+  background-color: rgba(6, 182, 212, 0.12) !important;
+}
+.dark .bg-primary-100,
+.dark .bg-primary-100\/50 {
+  background-color: rgba(6, 182, 212, 0.20) !important;
+}
+.dark .hover\:bg-primary-50:hover,
+.dark .hover\:bg-primary-50\/30:hover,
+.dark .hover\:bg-primary-50\/50:hover {
+  background-color: rgba(6, 182, 212, 0.18) !important;
+}
+.dark .border-primary-100,
+.dark .border-primary-100\/50,
+.dark .border-primary-200,
+.dark .border-primary-200\/50 {
+  border-color: rgba(6, 182, 212, 0.30) !important;
+}
+
+/* Semantic tinted surfaces used by GlobalSearch type badges, invoice pills,
+ * and stat cards. Map the `-50` wash onto the matching `-500` at low alpha. */
+.dark .bg-emerald-50 { background-color: rgba(16, 185, 129, 0.15) !important; }
+.dark .bg-blue-50    { background-color: rgba(59, 130, 246, 0.15) !important; }
+.dark .bg-purple-50  { background-color: rgba(168, 85, 247, 0.15) !important; }
+.dark .bg-amber-50   { background-color: rgba(245, 158, 11, 0.15) !important; }
+.dark .bg-red-50     { background-color: rgba(239, 68, 68, 0.15) !important; }
+.dark .bg-orange-50  { background-color: rgba(249, 115, 22, 0.15) !important; }
+
 .dark .input-field,
 .dark input,
 .dark select,

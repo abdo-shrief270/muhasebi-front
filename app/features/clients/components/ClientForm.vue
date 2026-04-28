@@ -1,91 +1,128 @@
 <template>
   <form @submit.prevent="onSubmit" class="space-y-5">
-    <div>
-      <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+    <!-- Basic info -->
+    <section>
+      <h4 class="form-section-title">
+        <UIcon name="i-lucide-user" class="w-3.5 h-3.5 text-neutral-400" />
         {{ locale === 'ar' ? 'البيانات الأساسية' : 'Basic Information' }}
       </h4>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div class="md:col-span-2">
-          <label class="form-label">{{ locale === 'ar' ? 'اسم العميل' : 'Client Name' }} *</label>
-          <input v-model="values.name" type="text" class="input-field" :class="{ 'input-error': errors.name }" @input="clearError('name')" />
+          <label class="form-label">
+            {{ locale === 'ar' ? 'اسم العميل' : 'Client Name' }}
+            <span class="text-danger-500">*</span>
+          </label>
+          <input
+            v-model="values.name"
+            type="text"
+            class="form-input"
+            :class="{ 'form-input--error': errors.name }"
+            @input="clearError('name')"
+          />
           <p v-if="errors.name" class="form-error">{{ errors.name }}</p>
         </div>
         <div>
           <label class="form-label">{{ locale === 'ar' ? 'الاسم التجاري' : 'Trade Name' }}</label>
-          <input v-model="values.trade_name" type="text" class="input-field" />
+          <input v-model="values.trade_name" type="text" class="form-input" />
         </div>
         <div>
           <label class="form-label">{{ locale === 'ar' ? 'نوع النشاط' : 'Activity Type' }}</label>
-          <input v-model="values.activity_type" type="text" class="input-field" />
+          <input v-model="values.activity_type" type="text" class="form-input" />
         </div>
       </div>
-    </div>
+    </section>
 
-    <div>
-      <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+    <!-- Legal -->
+    <section>
+      <h4 class="form-section-title">
+        <UIcon name="i-lucide-scale" class="w-3.5 h-3.5 text-neutral-400" />
         {{ locale === 'ar' ? 'البيانات القانونية' : 'Legal Information' }}
       </h4>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
           <label class="form-label">{{ locale === 'ar' ? 'الرقم الضريبي' : 'Tax ID' }}</label>
-          <input v-model="values.tax_id" type="text" class="input-field" :class="{ 'input-error': errors.tax_id }" dir="ltr" @input="clearError('tax_id')" />
+          <input
+            v-model="values.tax_id"
+            type="text"
+            class="form-input font-mono"
+            :class="{ 'form-input--error': errors.tax_id }"
+            dir="ltr"
+            @input="clearError('tax_id')"
+          />
           <p v-if="errors.tax_id" class="form-error">{{ errors.tax_id }}</p>
         </div>
         <div>
           <label class="form-label">{{ locale === 'ar' ? 'السجل التجاري' : 'Commercial Register' }}</label>
-          <input v-model="values.commercial_register" type="text" class="input-field" dir="ltr" />
+          <input v-model="values.commercial_register" type="text" class="form-input font-mono" dir="ltr" />
         </div>
       </div>
-    </div>
+    </section>
 
-    <div>
-      <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+    <!-- Contact -->
+    <section>
+      <h4 class="form-section-title">
+        <UIcon name="i-lucide-contact" class="w-3.5 h-3.5 text-neutral-400" />
         {{ locale === 'ar' ? 'بيانات التواصل' : 'Contact Information' }}
       </h4>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
           <label class="form-label">{{ locale === 'ar' ? 'البريد الإلكتروني' : 'Email' }}</label>
-          <input v-model="values.email" type="email" class="input-field" :class="{ 'input-error': errors.email }" dir="ltr" @input="clearError('email')" />
+          <input
+            v-model="values.email"
+            type="email"
+            class="form-input"
+            :class="{ 'form-input--error': errors.email }"
+            dir="ltr"
+            @input="clearError('email')"
+          />
           <p v-if="errors.email" class="form-error">{{ errors.email }}</p>
         </div>
         <div>
           <label class="form-label">{{ locale === 'ar' ? 'الهاتف' : 'Phone' }}</label>
-          <input v-model="values.phone" type="tel" class="input-field" dir="ltr" />
+          <input v-model="values.phone" type="tel" class="form-input" dir="ltr" />
         </div>
         <div>
           <label class="form-label">{{ locale === 'ar' ? 'جهة الاتصال' : 'Contact Person' }}</label>
-          <input v-model="values.contact_person" type="text" class="input-field" />
+          <input v-model="values.contact_person" type="text" class="form-input" />
         </div>
         <div>
           <label class="form-label">{{ locale === 'ar' ? 'هاتف جهة الاتصال' : 'Contact Phone' }}</label>
-          <input v-model="values.contact_phone" type="tel" class="input-field" dir="ltr" />
+          <input v-model="values.contact_phone" type="tel" class="form-input" dir="ltr" />
         </div>
       </div>
-    </div>
+    </section>
 
-    <div>
-      <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+    <!-- Address -->
+    <section>
+      <h4 class="form-section-title">
+        <UIcon name="i-lucide-map-pin" class="w-3.5 h-3.5 text-neutral-400" />
         {{ locale === 'ar' ? 'العنوان' : 'Address' }}
       </h4>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div class="md:col-span-2">
           <label class="form-label">{{ locale === 'ar' ? 'العنوان' : 'Address' }}</label>
-          <input v-model="values.address" type="text" class="input-field" />
+          <input v-model="values.address" type="text" class="form-input" />
         </div>
         <div>
           <label class="form-label">{{ locale === 'ar' ? 'المدينة' : 'City' }}</label>
-          <input v-model="values.city" type="text" class="input-field" />
+          <input v-model="values.city" type="text" class="form-input" />
         </div>
       </div>
-    </div>
+    </section>
 
+    <!-- Notes -->
     <div>
       <label class="form-label">{{ locale === 'ar' ? 'ملاحظات' : 'Notes' }}</label>
-      <textarea v-model="values.notes" rows="3" class="input-field resize-none"></textarea>
+      <textarea v-model="values.notes" rows="3" class="form-input resize-none"></textarea>
     </div>
 
-    <div class="flex items-center gap-3 pt-4 border-t border-gray-100">
-      <UiAppButton type="submit" variant="primary" :loading="loading || submitting">
+    <div class="flex items-center gap-2 pt-3 border-t border-neutral-200 dark:border-neutral-800">
+      <UiAppButton
+        type="submit"
+        variant="primary"
+        :icon="client ? 'i-lucide-save' : 'i-lucide-plus'"
+        :loading="loading || submitting"
+      >
         {{ client ? $t('common.save') : $t('common.create') }}
       </UiAppButton>
       <UiAppButton variant="outline" @click="$emit('cancel')">
@@ -141,18 +178,13 @@ watch(() => props.client, (c) => {
 
 async function onSubmit() {
   await handleSubmit(async (data) => {
-    await new Promise<void>((resolve, reject) => {
+    await new Promise<void>((resolve) => {
       emit('submit', data)
-      // Parent performs the mutation and catches errors. If it throws (unhandled)
-      // we don't resolve — we rely on ApiError propagation via a try/catch chain
-      // the parent establishes. For the common case (emit + parent awaits its own promise),
-      // we resolve on next tick so submitting briefly flips.
       queueMicrotask(resolve)
     })
   })
 }
 
-/** Parent can call this when its API mutation fails to map field errors. */
 defineExpose({
   applyApiErrors(err: ApiError) {
     if (err.code === 'validation' && err.fieldErrors) {
@@ -167,16 +199,39 @@ defineExpose({
 
 <style scoped>
 @reference "~/assets/css/tokens.css";
-.input-field {
-  @apply w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all text-sm bg-gray-50/50;
+
+.form-section-title {
+  @apply text-xs font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider mb-3 flex items-center gap-1.5;
 }
-.input-error {
-  @apply border-red-300 focus:ring-red-500/20 focus:border-red-500;
+.form-label { @apply block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5; }
+.form-error { @apply mt-1 text-xs text-danger-600 dark:text-danger-500 flex items-center gap-1; }
+
+.form-input {
+  width: 100%;
+  padding-inline: 0.75rem;
+  height: 2.25rem;
+  font-size: 0.875rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-neutral-200);
+  background-color: var(--color-neutral-0, #fff);
+  color: var(--color-neutral-900);
+  outline: none;
+  transition: border-color 150ms var(--ease-standard);
 }
-.form-label {
-  @apply block text-sm font-medium text-gray-600 mb-1;
+.form-input:focus {
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary-500) 20%, transparent);
 }
-.form-error {
-  @apply mt-1 text-xs text-red-500;
+textarea.form-input { height: auto; padding-block: 0.5rem; }
+.form-input--error { border-color: color-mix(in oklab, var(--color-danger-500) 60%, transparent); }
+.form-input--error:focus {
+  border-color: var(--color-danger-500);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-danger-500) 25%, transparent);
+}
+
+:global(html.dark) .form-input {
+  background-color: var(--color-neutral-900);
+  border-color: var(--color-neutral-800);
+  color: var(--color-neutral-0);
 }
 </style>

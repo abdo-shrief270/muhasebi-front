@@ -1,11 +1,14 @@
 <template>
-  <div>
-    <NuxtLayout name="dashboard">
-      <FeatureBoundary id="documents">
-      <UiPageHeader :title="$t('nav.documents')" :subtitle="locale === 'ar' ? `${total} مستند` : `${total} documents`">
+  <FeatureBoundary id="documents">
+    <div class="px-4 lg:px-6 py-5 max-w-[1400px] mx-auto">
+      <UiPageHeader
+        icon="i-lucide-folder"
+        :title="$t('nav.documents')"
+        :subtitle="totalLabel"
+      >
         <template #actions>
-          <UiAppButton variant="primary" @click="uploadOpen = true">
-            {{ locale === 'ar' ? '+ رفع مستند' : '+ Upload' }}
+          <UiAppButton variant="primary" icon="i-lucide-upload" @click="uploadOpen = true">
+            {{ locale === 'ar' ? 'رفع مستند' : 'Upload' }}
           </UiAppButton>
         </template>
       </UiPageHeader>
@@ -14,113 +17,143 @@
         :columns="columns"
         :rows="rows"
         :loading="loading"
+        :exportable="true"
         :current-page="currentPage"
         :total-pages="lastPage"
-        :empty-title="locale === 'ar' ? 'لا توجد مستندات' : 'No documents'"
+        :total="total"
+        empty-icon="i-lucide-folder"
+        :empty-title="locale === 'ar' ? 'لا توجد مستندات' : 'No documents yet'"
+        :empty-description="locale === 'ar'
+          ? 'ارفع أول ملف لتبدأ في تنظيم مستندات الشركة.'
+          : 'Upload your first file to start organizing your documents.'"
         @page-change="(p: number) => { page = p }"
       >
         <template #header>
-          <UiSearchInput v-model="searchInput" class="flex-1 min-w-[200px]" />
-          <UiFilterDropdown v-model="categoryFilter" :options="categoryOptions" :all-label="locale === 'ar' ? 'كل الأنواع' : 'All Categories'" />
+          <div class="flex items-center gap-2 flex-1 flex-wrap min-w-0">
+            <UiSearchInput
+              v-model="searchInput"
+              class="flex-1 min-w-[200px] max-w-xs"
+              :placeholder="locale === 'ar' ? 'بحث في المستندات...' : 'Search documents...'"
+            />
+            <UiFilterDropdown
+              v-model="categoryFilter"
+              :options="categoryOptions"
+              :all-label="locale === 'ar' ? 'كل الأنواع' : 'All categories'"
+            />
+          </div>
         </template>
 
         <template #cell-name="{ row }">
-          <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold" :class="mimeColor(row.mime_type)">
-              {{ mimeIcon(row.mime_type) }}
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div
+              class="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0"
+              :class="mimeColor(row.mime_type)"
+            >
+              <UIcon :name="mimeIcon(row.mime_type)" class="w-3.5 h-3.5" />
             </div>
-            <div>
-              <p class="font-medium text-gray-700 text-sm">{{ row.name }}</p>
-              <p class="text-xs text-gray-400">{{ formatSize(row.size_bytes) }}</p>
+            <div class="min-w-0">
+              <p class="text-sm font-medium text-neutral-900 dark:text-neutral-0 truncate">{{ row.name }}</p>
+              <p class="text-[11px] text-neutral-500 dark:text-neutral-400">{{ formatSize(row.size_bytes) }}</p>
             </div>
           </div>
         </template>
 
         <template #cell-category="{ value }">
-          <UiBadge v-if="value" color="blue">{{ value }}</UiBadge>
-          <span v-else class="text-gray-300">-</span>
+          <UiBadge v-if="value" color="blue">{{ categoryLabel(value) }}</UiBadge>
+          <span v-else class="text-xs text-neutral-400">—</span>
         </template>
 
         <template #cell-client="{ row }">
-          <span class="text-gray-500 text-sm">{{ row.client?.name || '-' }}</span>
+          <NuxtLink
+            v-if="row.client?.id"
+            :to="`/clients/${row.client.id}`"
+            class="text-sm text-neutral-700 dark:text-neutral-200 hover:text-primary-600 dark:hover:text-primary-400 transition-colors truncate"
+            @click.stop
+          >
+            {{ row.client.name }}
+          </NuxtLink>
+          <span v-else class="text-xs text-neutral-400">—</span>
         </template>
 
         <template #cell-created_at="{ value }">
-          <span class="text-xs text-gray-400">{{ new Date(value).toLocaleDateString() }}</span>
+          <span class="text-xs text-neutral-500 dark:text-neutral-400 tabular-nums" dir="ltr">{{ formatDate(value) }}</span>
         </template>
 
         <template #cell-actions="{ row }">
-          <div class="flex items-center gap-1" @click.stop>
+          <div class="flex items-center justify-end gap-0.5" @click.stop>
             <a
               :href="downloadUrl(row.id)"
               target="_blank"
-              class="p-1.5 rounded-lg text-gray-400 hover:text-secondary-400 hover:bg-secondary-50 transition"
+              rel="noopener noreferrer"
+              class="w-7 h-7 inline-flex items-center justify-center rounded-md text-neutral-400 hover:text-info-600 hover:bg-info-500/10 transition-colors"
               :title="locale === 'ar' ? 'تحميل' : 'Download'"
             >
-              &#8595;
+              <UIcon name="i-lucide-download" class="w-3.5 h-3.5" />
             </a>
             <button
+              type="button"
+              class="w-7 h-7 inline-flex items-center justify-center rounded-md text-neutral-400 hover:text-warning-600 hover:bg-warning-500/10 transition-colors"
+              :title="row.is_archived
+                ? (locale === 'ar' ? 'استعادة' : 'Unarchive')
+                : (locale === 'ar' ? 'أرشفة' : 'Archive')"
               @click="handleArchive(row)"
-              class="p-1.5 rounded-lg text-gray-400 hover:text-amber-500 hover:bg-amber-50 transition"
-              :title="row.is_archived ? (locale === 'ar' ? 'استعادة' : 'Unarchive') : (locale === 'ar' ? 'أرشفة' : 'Archive')"
             >
-              {{ row.is_archived ? '&#8634;' : '&#9744;' }}
+              <UIcon :name="row.is_archived ? 'i-lucide-archive-restore' : 'i-lucide-archive'" class="w-3.5 h-3.5" />
             </button>
             <button
+              type="button"
+              class="w-7 h-7 inline-flex items-center justify-center rounded-md text-neutral-400 hover:text-danger-600 hover:bg-danger-500/10 transition-colors"
+              :title="$t('common.delete')"
               @click="confirmDelete(row)"
-              class="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition"
             >
-              &#10005;
+              <UIcon name="i-lucide-trash-2" class="w-3.5 h-3.5" />
             </button>
           </div>
         </template>
       </UiDataTable>
 
-      <!-- Upload SlideOver -->
+      <!-- Upload slideover -->
       <UiSlideOver v-model="uploadOpen" :title="locale === 'ar' ? 'رفع مستند' : 'Upload Document'">
-        <div class="space-y-5">
+        <div class="space-y-4">
           <UiFileUpload :uploading="uploading" multiple @files="handleUpload" />
 
-          <!-- Uploaded files list -->
-          <TransitionGroup name="fade-slide">
+          <TransitionGroup name="fade-slide" tag="div" class="space-y-2">
             <div
               v-for="(file, i) in uploadedFiles"
               :key="i"
-              class="flex items-center gap-3 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3"
+              class="flex items-center gap-2 bg-success-500/10 border border-success-500/20 rounded-md px-3 py-2"
             >
-              <span class="text-emerald-500">&#10003;</span>
-              <span class="text-sm text-gray-700 flex-1">{{ file }}</span>
+              <UIcon name="i-lucide-check-circle-2" class="w-4 h-4 text-success-600 dark:text-success-400 flex-shrink-0" />
+              <span class="text-sm text-neutral-700 dark:text-neutral-200 truncate flex-1">{{ file }}</span>
             </div>
           </TransitionGroup>
 
-          <div v-if="uploadedFiles.length > 0" class="pt-4">
-            <UiAppButton variant="primary" @click="uploadOpen = false; refresh()">
+          <div v-if="uploadedFiles.length > 0" class="pt-3 border-t border-neutral-200 dark:border-neutral-800">
+            <UiAppButton variant="primary" class="w-full" @click="uploadOpen = false; refresh()">
               {{ $t('common.close') }}
             </UiAppButton>
           </div>
         </div>
       </UiSlideOver>
 
-      <!-- Delete confirm -->
       <UiConfirmModal
         v-model="deleteConfirmOpen"
         :title="locale === 'ar' ? 'حذف المستند' : 'Delete Document'"
-        :description="locale === 'ar' ? 'هل أنت متأكد من حذف هذا المستند؟' : 'Are you sure you want to delete this document?'"
-        icon="&#9888;"
+        :description="locale === 'ar' ? 'لن يمكن استرجاع المستند بعد الحذف.' : 'This document cannot be recovered once deleted.'"
+        icon="i-lucide-alert-triangle"
         variant="danger"
         :confirm-label="$t('common.delete')"
         @confirm="handleDelete"
       />
-      </FeatureBoundary>
-    </NuxtLayout>
-  </div>
+    </div>
+  </FeatureBoundary>
 </template>
 
 <script setup lang="ts">
 import { documentService, type Document, type DocumentListParams } from '~/features/documents/services/documentService'
 import type { ApiError } from '~/core/api/errors'
 
-definePageMeta({ layout: false })
+definePageMeta({ layout: 'dashboard' })
 
 const { locale } = useI18n()
 const toastStore = useToastStore()
@@ -142,9 +175,9 @@ const { data, loading, refresh } = useDocumentsList(params)
 const { upload: uploadMutation, archive: archiveMutation, unarchive: unarchiveMutation, remove: removeMutation } = useDocumentMutations()
 
 const rows = computed(() => data.value?.data ?? [])
-const total = computed(() => data.value?.meta.total ?? 0)
-const currentPage = computed(() => data.value?.meta.current_page ?? 1)
-const lastPage = computed(() => data.value?.meta.last_page ?? 1)
+const total = computed(() => data.value?.meta?.total ?? 0)
+const currentPage = computed(() => data.value?.meta?.current_page ?? 1)
+const lastPage = computed(() => data.value?.meta?.last_page ?? 1)
 
 const svc = documentService()
 const downloadUrl = (id: number) => svc.downloadUrl(id)
@@ -217,26 +250,58 @@ async function handleDelete() {
   deleteConfirmOpen.value = false
 }
 
+const totalLabel = computed(() => {
+  const n = total.value.toLocaleString()
+  if (locale.value === 'ar') return `${n} مستند`
+  return `${n} ${total.value === 1 ? 'document' : 'documents'}`
+})
+
+const CATEGORY_AR: Record<string, string> = {
+  tax_document: 'ضريبي', invoice: 'فاتورة', receipt: 'إيصال',
+  contract: 'عقد', financial_statement: 'قائمة مالية', other: 'أخرى',
+}
+const CATEGORY_EN: Record<string, string> = {
+  tax_document: 'Tax', invoice: 'Invoice', receipt: 'Receipt',
+  contract: 'Contract', financial_statement: 'Statement', other: 'Other',
+}
+function categoryLabel(c: string) {
+  const map = locale.value === 'ar' ? CATEGORY_AR : CATEGORY_EN
+  return map[c] ?? c
+}
+
 function formatSize(bytes: number) {
   if (bytes < 1024) return bytes + ' B'
   if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB'
   return (bytes / 1048576).toFixed(1) + ' MB'
 }
 
-function mimeIcon(mime: string) {
-  if (mime?.includes('pdf')) return 'PDF'
-  if (mime?.includes('image')) return 'IMG'
-  if (mime?.includes('spreadsheet') || mime?.includes('excel')) return 'XLS'
-  if (mime?.includes('word') || mime?.includes('document')) return 'DOC'
-  return 'FILE'
+function formatDate(d: string | null | undefined) {
+  if (!d) return '—'
+  try {
+    return new Date(d).toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : 'en-US', {
+      year: 'numeric', month: 'short', day: 'numeric',
+    })
+  } catch {
+    return d
+  }
 }
 
-function mimeColor(mime: string) {
-  if (mime?.includes('pdf')) return 'bg-red-50 text-red-500'
-  if (mime?.includes('image')) return 'bg-purple-50 text-purple-500'
-  if (mime?.includes('spreadsheet') || mime?.includes('excel')) return 'bg-emerald-50 text-emerald-500'
-  if (mime?.includes('word') || mime?.includes('document')) return 'bg-blue-50 text-blue-500'
-  return 'bg-gray-50 text-gray-400'
+/** MIME-type → Lucide icon. Falls back to a generic file icon. */
+function mimeIcon(mime: string): string {
+  if (mime?.includes('pdf')) return 'i-lucide-file-text'
+  if (mime?.includes('image')) return 'i-lucide-image'
+  if (mime?.includes('spreadsheet') || mime?.includes('excel')) return 'i-lucide-file-spreadsheet'
+  if (mime?.includes('word') || mime?.includes('document')) return 'i-lucide-file'
+  return 'i-lucide-file'
+}
+
+/** MIME-type → tinted background + foreground for the icon chip. */
+function mimeColor(mime: string): string {
+  if (mime?.includes('pdf')) return 'bg-danger-500/10 text-danger-600 dark:text-danger-400'
+  if (mime?.includes('image')) return 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
+  if (mime?.includes('spreadsheet') || mime?.includes('excel')) return 'bg-success-500/10 text-success-600 dark:text-success-400'
+  if (mime?.includes('word') || mime?.includes('document')) return 'bg-info-500/10 text-info-600 dark:text-info-400'
+  return 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500'
 }
 
 </script>

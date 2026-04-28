@@ -1,6 +1,5 @@
 <template>
   <div>
-    <NuxtLayout name="public">
       <div class="max-w-7xl mx-auto px-6 py-12">
         <!-- Header -->
         <div class="text-center mb-12">
@@ -94,14 +93,13 @@
           >{{ p }}</button>
         </div>
       </div>
-    </NuxtLayout>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { BlogPost, BlogCategory } from '~/features/blog/composables/useBlog'
 
-definePageMeta({ layout: false })
+definePageMeta({ layout: 'public' })
 
 const { locale } = useI18n()
 const { getPosts, getCategories } = useBlog()

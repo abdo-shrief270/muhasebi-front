@@ -1,6 +1,5 @@
 <template>
   <div>
-    <NuxtLayout name="public">
       <div class="max-w-6xl mx-auto px-6 py-12">
         <div class="grid lg:grid-cols-5 gap-12">
           <!-- Left: Contact Info -->
@@ -108,12 +107,11 @@
           </div>
         </div>
       </div>
-    </NuxtLayout>
   </div>
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: false })
+definePageMeta({ layout: 'public' })
 
 const { locale } = useI18n()
 const api = useApi()

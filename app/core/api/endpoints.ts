@@ -624,6 +624,10 @@ export const ENDPOINTS = {
   landingPageSettings: {
     root: '/landing-page-settings',
   },
+  branding: {
+    root: '/branding',
+    asset: (kind: 'logo' | 'favicon') => `/branding/asset/${kind}`,
+  },
 
   /* ---------------------------------------------------- 27 data import */
   imports: {
@@ -638,6 +642,8 @@ export const ENDPOINTS = {
 
   /* ---------------------------------------------------- 28 client portal */
   portal: {
+    /** Anonymous endpoint hit by the magic-link landing page. */
+    acceptInvite:    '/portal/accept-invite',
     dashboard:       '/portal/dashboard',
     profile:         '/portal/profile',
     invoices:        '/portal/invoices',

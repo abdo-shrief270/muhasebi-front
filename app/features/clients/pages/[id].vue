@@ -492,6 +492,95 @@
                     </UiEmptyState>
                   </div>
 
+                  <!-- Messages tab -->
+                  <div
+                    v-if="activeTab === 'messages'"
+                    class="bg-neutral-0 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden"
+                  >
+                    <div class="px-4 py-2.5 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50/60 dark:bg-neutral-950/40 flex items-center justify-between gap-3">
+                      <span class="text-xs text-neutral-500 dark:text-neutral-400 tabular-nums">
+                        {{ messages.length }}
+                        {{ locale === 'ar'
+                          ? (messages.length === 1 ? 'رسالة' : 'رسائل')
+                          : (messages.length === 1 ? 'message' : 'messages') }}
+                      </span>
+                      <UiAppButton
+                        variant="primary"
+                        size="sm"
+                        icon="i-lucide-send"
+                        @click="composeOpen = true"
+                      >
+                        {{ locale === 'ar' ? 'رسالة جديدة' : 'New message' }}
+                      </UiAppButton>
+                    </div>
+
+                    <div v-if="messagesLoading" class="p-6">
+                      <UiLoadingSkeleton :lines="4" :height="48" />
+                    </div>
+
+                    <ul v-else-if="messages.length > 0" class="divide-y divide-neutral-100 dark:divide-neutral-800/60">
+                      <li
+                        v-for="msg in messages"
+                        :key="msg.id"
+                        class="px-4 py-3 hover:bg-neutral-50/60 dark:hover:bg-neutral-800/40 transition-colors cursor-pointer"
+                        @click="openMessage(msg)"
+                      >
+                        <div class="flex items-start justify-between gap-3">
+                          <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-2 flex-wrap mb-1">
+                              <UiBadge :color="msg.direction === 'outbound' ? 'blue' : 'gray'" dot>
+                                {{ msg.direction === 'outbound'
+                                  ? (locale === 'ar' ? 'مُرسلة' : 'Sent')
+                                  : (locale === 'ar' ? 'واردة' : 'Received') }}
+                              </UiBadge>
+                              <span
+                                v-if="msg.direction === 'inbound' && !msg.is_read"
+                                class="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-info-700 dark:text-info-400"
+                              >
+                                <span class="w-1.5 h-1.5 rounded-full bg-info-500" />
+                                {{ locale === 'ar' ? 'جديدة' : 'New' }}
+                              </span>
+                              <span class="text-[11px] text-neutral-400 dark:text-neutral-500 tabular-nums" dir="ltr">
+                                {{ formatDateTime(msg.created_at) }}
+                              </span>
+                            </div>
+                            <p class="text-sm font-medium text-neutral-900 dark:text-neutral-0 truncate">
+                              {{ msg.subject }}
+                            </p>
+                            <p class="text-xs text-neutral-500 dark:text-neutral-400 truncate mt-0.5">
+                              {{ msg.body }}
+                            </p>
+                            <p
+                              v-if="msg.sender?.name"
+                              class="text-[11px] text-neutral-400 dark:text-neutral-500 mt-1"
+                            >
+                              {{ locale === 'ar' ? 'من' : 'From' }}: {{ msg.sender.name }}
+                            </p>
+                          </div>
+                          <UIcon
+                            name="i-lucide-chevron-right"
+                            class="w-4 h-4 text-neutral-400 flex-shrink-0 mt-1 rtl:rotate-180"
+                          />
+                        </div>
+                      </li>
+                    </ul>
+
+                    <UiEmptyState
+                      v-else
+                      icon="i-lucide-message-square"
+                      :title="locale === 'ar' ? 'لا توجد رسائل' : 'No messages yet'"
+                      :description="locale === 'ar'
+                        ? 'ابدأ محادثة مع العميل. الرسائل تظهر هنا وفي بوابته.'
+                        : 'Start a conversation with this client. Messages appear here and in their portal.'"
+                    >
+                      <template #action>
+                        <UiAppButton variant="primary" size="sm" icon="i-lucide-send" @click="composeOpen = true">
+                          {{ locale === 'ar' ? 'رسالة جديدة' : 'New message' }}
+                        </UiAppButton>
+                      </template>
+                    </UiEmptyState>
+                  </div>
+
                   <!-- Portal-access tab -->
                   <div
                     v-if="activeTab === 'portal'"
@@ -722,6 +811,89 @@
           </form>
         </UiSlideOver>
 
+        <!-- Message compose slideover -->
+        <UiSlideOver
+          v-model="composeOpen"
+          :title="locale === 'ar' ? 'رسالة جديدة' : 'New message'"
+        >
+          <form @submit.prevent="handleSendMessage" class="space-y-4">
+            <p class="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">
+              {{ locale === 'ar'
+                ? 'ستظهر الرسالة في بوابة العميل فور الإرسال.'
+                : 'The message appears in the client portal as soon as you send it.' }}
+            </p>
+
+            <div>
+              <label class="ci-label">
+                {{ locale === 'ar' ? 'الموضوع' : 'Subject' }}
+                <span class="text-danger-500">*</span>
+              </label>
+              <input
+                v-model="messageForm.subject"
+                type="text"
+                required
+                maxlength="255"
+                class="ci-input"
+                :placeholder="locale === 'ar' ? 'مثال: تذكير بالفاتورة المستحقة' : 'e.g. Reminder: invoice due'"
+              />
+            </div>
+
+            <div>
+              <label class="ci-label">
+                {{ locale === 'ar' ? 'الرسالة' : 'Message' }}
+                <span class="text-danger-500">*</span>
+              </label>
+              <textarea
+                v-model="messageForm.body"
+                rows="6"
+                required
+                maxlength="5000"
+                class="ci-input resize-none leading-relaxed"
+              />
+              <p class="mt-1 text-[11px] text-neutral-400 dark:text-neutral-500 tabular-nums">
+                {{ messageForm.body.length }} / 5000
+              </p>
+            </div>
+
+            <div class="flex gap-2 pt-3 border-t border-neutral-200 dark:border-neutral-800">
+              <UiAppButton
+                type="submit"
+                variant="primary"
+                icon="i-lucide-send"
+                :loading="sending"
+                :disabled="!messageForm.subject.trim() || !messageForm.body.trim()"
+              >
+                {{ locale === 'ar' ? 'إرسال' : 'Send' }}
+              </UiAppButton>
+              <UiAppButton variant="outline" :disabled="sending" @click="composeOpen = false">
+                {{ $t('common.cancel') }}
+              </UiAppButton>
+            </div>
+          </form>
+        </UiSlideOver>
+
+        <!-- Message reader slideover -->
+        <UiSlideOver
+          v-model="readOpen"
+          :title="selectedMessage?.subject || ''"
+        >
+          <div v-if="selectedMessage" class="space-y-4">
+            <div class="flex items-center gap-2 flex-wrap text-xs text-neutral-500 dark:text-neutral-400">
+              <UiBadge :color="selectedMessage.direction === 'outbound' ? 'blue' : 'gray'" dot>
+                {{ selectedMessage.direction === 'outbound'
+                  ? (locale === 'ar' ? 'مُرسلة' : 'Sent')
+                  : (locale === 'ar' ? 'واردة' : 'Received') }}
+              </UiBadge>
+              <span v-if="selectedMessage.sender?.name">{{ selectedMessage.sender.name }}</span>
+              <span v-if="selectedMessage.sender?.name">·</span>
+              <span class="tabular-nums" dir="ltr">{{ formatDateTime(selectedMessage.created_at) }}</span>
+            </div>
+            <div class="text-sm text-neutral-800 dark:text-neutral-200 whitespace-pre-line leading-relaxed">
+              {{ selectedMessage.body }}
+            </div>
+          </div>
+        </UiSlideOver>
+
         <UiConfirmModal
           v-model="revokeOpen"
           :title="locale === 'ar' ? 'إلغاء وصول البوابة' : 'Revoke portal access'"
@@ -741,7 +913,7 @@
 <script setup lang="ts">
 import type { ApiError } from '~/core/api/errors'
 import type { ClientProduct, ClientProductForm as ClientProductFormType } from '~/features/clients/services/clientProductService'
-import type { PortalUser } from '~/features/clients/services/clientService'
+import type { ClientMessage, PortalUser } from '~/features/clients/services/clientService'
 
 definePageMeta({ layout: 'dashboard' })
 
@@ -813,11 +985,67 @@ async function loadPortalUsers() {
   }
 }
 
+// ── Messages (tab) ─────────────────────────────────────────────
+//
+// Firm-side messaging thread with this client. Mirrors the portal's
+// /portal/messages page but scoped to one client and reachable from the
+// client detail page. Inbound = client → firm, outbound = firm → client.
+const messages = ref<ClientMessage[]>([])
+const messagesLoading = ref(false)
+const composeOpen = ref(false)
+const sending = ref(false)
+const messageForm = reactive({ subject: '', body: '' })
+const readOpen = ref(false)
+const selectedMessage = ref<ClientMessage | null>(null)
+
+async function loadMessages() {
+  if (!clientId.value) return
+  messagesLoading.value = true
+  try {
+    const res = await clientService().messages(clientId.value, { per_page: 50 })
+    messages.value = res.data ?? []
+  } catch {
+    messages.value = []
+  } finally {
+    messagesLoading.value = false
+  }
+}
+
+async function handleSendMessage() {
+  if (!clientId.value || !messageForm.subject.trim() || !messageForm.body.trim()) return
+  sending.value = true
+  try {
+    await clientService().sendMessage(
+      clientId.value,
+      { subject: messageForm.subject.trim(), body: messageForm.body.trim() },
+      generateIdempotencyKey(),
+    )
+    toastStore.success(locale.value === 'ar' ? 'تم الإرسال' : 'Sent')
+    composeOpen.value = false
+    messageForm.subject = ''
+    messageForm.body = ''
+    await loadMessages()
+  } catch (e: unknown) {
+    const err = e as ApiError
+    toastStore.error(err?.message || (locale.value === 'ar' ? 'فشل الإرسال' : 'Send failed'))
+  } finally {
+    sending.value = false
+  }
+}
+
+function openMessage(msg: ClientMessage) {
+  selectedMessage.value = msg
+  readOpen.value = true
+}
+
 watch(activeTab, (tab) => {
   // Lazy-load on first time the user opens the Portal tab; subsequent
   // renders use the cached list until they invite/revoke/resend.
   if (tab === 'portal' && portalUsers.value.length === 0 && !portalLoading.value) {
     loadPortalUsers()
+  }
+  if (tab === 'messages' && messages.value.length === 0 && !messagesLoading.value) {
+    loadMessages()
   }
 })
 
@@ -915,6 +1143,7 @@ const tabs = computed(() => [
   { key: 'products',  label: locale.value === 'ar' ? 'المنتجات'    : 'Products',  count: products.value.length,         icon: 'i-lucide-package' },
   { key: 'documents', label: locale.value === 'ar' ? 'المستندات'   : 'Documents', count: clientDocuments.value.length,  icon: 'i-lucide-folder' },
   { key: 'notes',     label: locale.value === 'ar' ? 'ملاحظات'     : 'Notes',                                            icon: 'i-lucide-sticky-note' },
+  { key: 'messages',  label: locale.value === 'ar' ? 'الرسائل'     : 'Messages', count: messages.value.length,         icon: 'i-lucide-message-square' },
   { key: 'portal',    label: locale.value === 'ar' ? 'بوابة العميل' : 'Portal',   count: portalUsers.value.length,      icon: 'i-lucide-user-plus' },
 ])
 

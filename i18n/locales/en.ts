@@ -138,6 +138,7 @@ export default {
     currencies: 'Currencies',
     webhooks: 'Webhooks',
     landing: 'Landing Page',
+    branding: 'Branding',
     general: 'General',
     groups: {
       dashboard: 'Dashboard',

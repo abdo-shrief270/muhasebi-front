@@ -2,7 +2,7 @@
   <div class="relative">
     <button
       @click="toggle"
-      class="relative text-gray-500 hover:text-primary-500 transition p-1"
+      class="relative text-neutral-500 dark:text-neutral-400 hover:text-primary-500 transition p-1"
     >
       <span class="text-xl">&#128276;</span>
       <span
@@ -17,10 +17,10 @@
     <Transition name="fade">
       <div
         v-if="isOpen"
-        class="absolute end-0 top-full mt-2 w-80 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden"
+        class="absolute end-0 top-full mt-2 w-80 bg-neutral-0 dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-2xl shadow-xl z-50 overflow-hidden"
       >
-        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-50">
-          <h4 class="font-semibold text-sm text-gray-700">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-neutral-50 dark:border-neutral-800">
+          <h4 class="font-semibold text-sm text-neutral-700 dark:text-neutral-200">
             {{ locale === 'ar' ? 'الإشعارات' : 'Notifications' }}
           </h4>
           <button
@@ -38,8 +38,8 @@
               v-for="notif in notifStore.notifications"
               :key="notif.id"
               @click="handleClick(notif)"
-              class="px-4 py-3 border-b border-gray-50/50 cursor-pointer hover:bg-gray-50/50 transition-colors"
-              :class="{ 'bg-primary-50/30': !notif.is_read }"
+              class="px-4 py-3 border-b border-neutral-50/50 dark:border-neutral-800/50 cursor-pointer hover:bg-neutral-50/50 dark:hover:bg-neutral-800/40 transition-colors"
+              :class="{ 'bg-primary-50/30 dark:bg-primary-500/5': !notif.is_read }"
             >
               <div class="flex items-start gap-2">
                 <span
@@ -47,18 +47,18 @@
                   class="w-2 h-2 rounded-full bg-secondary-400 mt-1.5 flex-shrink-0"
                 ></span>
                 <div class="flex-1 min-w-0">
-                  <p class="text-sm font-medium text-gray-800 truncate">
+                  <p class="text-sm font-medium text-neutral-800 dark:text-neutral-100 truncate">
                     {{ locale === 'ar' ? notif.title_ar : notif.title_en }}
                   </p>
-                  <p v-if="locale === 'ar' ? notif.body_ar : notif.body_en" class="text-xs text-gray-400 mt-0.5 line-clamp-2">
+                  <p v-if="locale === 'ar' ? notif.body_ar : notif.body_en" class="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5 line-clamp-2">
                     {{ locale === 'ar' ? notif.body_ar : notif.body_en }}
                   </p>
-                  <p class="text-[10px] text-gray-300 mt-1">{{ timeAgo(notif.created_at) }}</p>
+                  <p class="text-[10px] text-neutral-300 dark:text-neutral-600 mt-1">{{ timeAgo(notif.created_at) }}</p>
                 </div>
               </div>
             </div>
           </template>
-          <div v-else class="py-10 text-center text-gray-300 text-sm">
+          <div v-else class="py-10 text-center text-neutral-300 dark:text-neutral-600 text-sm">
             {{ locale === 'ar' ? 'لا توجد إشعارات' : 'No notifications' }}
           </div>
         </div>
@@ -66,7 +66,7 @@
         <NuxtLink
           to="/notifications"
           @click="isOpen = false"
-          class="block text-center py-3 text-xs text-secondary-400 hover:bg-gray-50 border-t border-gray-50 font-medium"
+          class="block text-center py-3 text-xs text-secondary-400 hover:bg-neutral-50 dark:hover:bg-neutral-800/40 border-t border-neutral-50 dark:border-neutral-800 font-medium"
         >
           {{ locale === 'ar' ? 'عرض الكل' : 'View all' }}
         </NuxtLink>

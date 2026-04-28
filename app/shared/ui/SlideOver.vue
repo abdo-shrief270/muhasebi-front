@@ -16,14 +16,14 @@
         <Transition :name="locale === 'ar' ? 'slide-right' : 'slide-left'">
           <div
             v-if="modelValue"
-            class="relative w-full max-w-lg bg-white shadow-2xl flex flex-col h-full"
+            class="relative w-full max-w-lg bg-neutral-0 dark:bg-neutral-900 shadow-2xl flex flex-col h-full"
           >
             <!-- Header -->
-            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h2 class="text-lg font-bold text-gray-800">{{ title }}</h2>
+            <div class="flex items-center justify-between px-6 py-4 border-b border-neutral-100 dark:border-neutral-800">
+              <h2 class="text-lg font-bold text-neutral-900 dark:text-neutral-0">{{ title }}</h2>
               <button
                 @click="$emit('update:modelValue', false)"
-                class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 transition"
+                class="w-8 h-8 flex items-center justify-center rounded-lg text-neutral-400 dark:text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition"
               >
                 &#10005;
               </button>
@@ -35,7 +35,7 @@
             </div>
 
             <!-- Footer -->
-            <div v-if="$slots.footer" class="px-6 py-4 border-t border-gray-100 bg-gray-50/50">
+            <div v-if="$slots.footer" class="px-6 py-4 border-t border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-950/40">
               <slot name="footer" />
             </div>
           </div>

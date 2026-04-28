@@ -5,37 +5,37 @@
       <div v-if="loading"><UiLoadingSkeleton :lines="4" :height="24" /></div>
 
       <div v-else-if="profile" class="max-w-2xl space-y-6">
-        <div v-motion :initial="{ opacity: 0, y: 15 }" :enter="{ opacity: 1, y: 0 }" class="bg-white rounded-2xl border border-gray-100/80 p-6">
+        <div v-motion :initial="{ opacity: 0, y: 15 }" :enter="{ opacity: 1, y: 0 }" class="bg-neutral-0 dark:bg-neutral-900 rounded-2xl border border-neutral-100/80 dark:border-neutral-800 p-6">
           <div class="flex items-center gap-4 mb-6">
-            <div class="w-16 h-16 bg-primary-100 rounded-2xl flex items-center justify-center">
-              <span class="text-primary-500 font-bold text-2xl">{{ profile.name?.charAt(0) }}</span>
+            <div class="w-16 h-16 bg-primary-100 dark:bg-primary-500/20 rounded-2xl flex items-center justify-center">
+              <span class="text-primary-500 dark:text-primary-300 font-bold text-2xl">{{ profile.name?.charAt(0) }}</span>
             </div>
             <div>
-              <p class="text-xl font-bold text-gray-800">{{ profile.name }}</p>
-              <p class="text-sm text-gray-400">{{ profile.trade_name || '' }}</p>
+              <p class="text-xl font-bold text-neutral-800 dark:text-neutral-0">{{ profile.name }}</p>
+              <p class="text-sm text-neutral-400 dark:text-neutral-500">{{ profile.trade_name || '' }}</p>
             </div>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div v-if="profile.email">
-              <span class="text-gray-400">{{ locale === 'ar' ? 'البريد' : 'Email' }}:</span>
-              <span class="text-gray-700 ms-2" dir="ltr">{{ profile.email }}</span>
+              <span class="text-neutral-400 dark:text-neutral-500">{{ locale === 'ar' ? 'البريد' : 'Email' }}:</span>
+              <span class="text-neutral-700 dark:text-neutral-200 ms-2" dir="ltr">{{ profile.email }}</span>
             </div>
             <div v-if="profile.phone">
-              <span class="text-gray-400">{{ locale === 'ar' ? 'الهاتف' : 'Phone' }}:</span>
-              <span class="text-gray-700 ms-2" dir="ltr">{{ profile.phone }}</span>
+              <span class="text-neutral-400 dark:text-neutral-500">{{ locale === 'ar' ? 'الهاتف' : 'Phone' }}:</span>
+              <span class="text-neutral-700 dark:text-neutral-200 ms-2" dir="ltr">{{ profile.phone }}</span>
             </div>
             <div v-if="profile.tax_id">
-              <span class="text-gray-400">{{ locale === 'ar' ? 'الرقم الضريبي' : 'Tax ID' }}:</span>
-              <span class="text-gray-700 ms-2 font-mono" dir="ltr">{{ profile.tax_id }}</span>
+              <span class="text-neutral-400 dark:text-neutral-500">{{ locale === 'ar' ? 'الرقم الضريبي' : 'Tax ID' }}:</span>
+              <span class="text-neutral-700 dark:text-neutral-200 ms-2 font-mono" dir="ltr">{{ profile.tax_id }}</span>
             </div>
             <div v-if="profile.city">
-              <span class="text-gray-400">{{ locale === 'ar' ? 'المدينة' : 'City' }}:</span>
-              <span class="text-gray-700 ms-2">{{ profile.city }}</span>
+              <span class="text-neutral-400 dark:text-neutral-500">{{ locale === 'ar' ? 'المدينة' : 'City' }}:</span>
+              <span class="text-neutral-700 dark:text-neutral-200 ms-2">{{ profile.city }}</span>
             </div>
             <div v-if="profile.address" class="md:col-span-2">
-              <span class="text-gray-400">{{ locale === 'ar' ? 'العنوان' : 'Address' }}:</span>
-              <span class="text-gray-700 ms-2">{{ profile.address }}</span>
+              <span class="text-neutral-400 dark:text-neutral-500">{{ locale === 'ar' ? 'العنوان' : 'Address' }}:</span>
+              <span class="text-neutral-700 dark:text-neutral-200 ms-2">{{ profile.address }}</span>
             </div>
           </div>
         </div>

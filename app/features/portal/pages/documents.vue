@@ -17,15 +17,15 @@
           v-motion
           :initial="{ opacity: 0, y: 10 }"
           :enter="{ opacity: 1, y: 0, transition: { delay: i * 50 } }"
-          class="bg-white rounded-xl border border-gray-100/80 p-4 flex items-center justify-between hover:border-gray-200 transition"
+          class="bg-neutral-0 dark:bg-neutral-900 rounded-xl border border-neutral-100/80 dark:border-neutral-800 p-4 flex items-center justify-between hover:border-neutral-200 dark:hover:border-neutral-700 transition"
         >
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center text-xs font-bold text-gray-400">
+            <div class="w-10 h-10 bg-neutral-50 dark:bg-neutral-800 rounded-lg flex items-center justify-center text-xs font-bold text-neutral-400 dark:text-neutral-500">
               {{ doc.mime_type?.includes('pdf') ? 'PDF' : 'FILE' }}
             </div>
             <div>
-              <p class="text-sm font-medium text-gray-700">{{ doc.name }}</p>
-              <p class="text-xs text-gray-400">{{ new Date(doc.created_at).toLocaleDateString() }}</p>
+              <p class="text-sm font-medium text-neutral-700 dark:text-neutral-200">{{ doc.name }}</p>
+              <p class="text-xs text-neutral-400 dark:text-neutral-500">{{ new Date(doc.created_at).toLocaleDateString() }}</p>
             </div>
           </div>
           <a :href="downloadUrl(doc.id)" target="_blank" class="text-secondary-400 hover:text-secondary-500 text-sm font-medium">

@@ -19,7 +19,7 @@
           <span class="font-mono font-medium" dir="ltr">{{ Number(value).toLocaleString() }}</span>
         </template>
         <template #cell-balance_due="{ value }">
-          <span class="font-mono" dir="ltr" :class="value > 0 ? 'text-amber-500 font-medium' : 'text-gray-300'">
+          <span class="font-mono" dir="ltr" :class="value > 0 ? 'text-amber-500 font-medium' : 'text-neutral-300 dark:text-neutral-600'">
             {{ value > 0 ? Number(value).toLocaleString() : '-' }}
           </span>
         </template>
@@ -33,21 +33,26 @@
       <!-- Invoice detail SlideOver -->
       <UiSlideOver v-model="detailOpen" :title="`${locale === 'ar' ? 'فاتورة' : 'Invoice'} ${selectedInvoice?.invoice_number || ''}`">
         <div v-if="selectedInvoice" class="space-y-4">
-          <div class="grid grid-cols-2 gap-3 text-sm">
-            <div><span class="text-gray-400">{{ locale === 'ar' ? 'التاريخ' : 'Date' }}:</span> {{ selectedInvoice.date }}</div>
-            <div><span class="text-gray-400">{{ locale === 'ar' ? 'الاستحقاق' : 'Due' }}:</span> {{ selectedInvoice.due_date || '-' }}</div>
-            <div><span class="text-gray-400">{{ $t('common.total') }}:</span> <span class="font-mono font-bold" dir="ltr">{{ Number(selectedInvoice.total).toLocaleString() }}</span></div>
-            <div><span class="text-gray-400">{{ locale === 'ar' ? 'المستحق' : 'Due' }}:</span> <span class="font-mono font-bold text-amber-500" dir="ltr">{{ Number(selectedInvoice.balance_due).toLocaleString() }}</span></div>
+          <div class="grid grid-cols-2 gap-3 text-sm text-neutral-800 dark:text-neutral-200">
+            <div><span class="text-neutral-400 dark:text-neutral-500">{{ locale === 'ar' ? 'التاريخ' : 'Date' }}:</span> {{ selectedInvoice.date }}</div>
+            <div><span class="text-neutral-400 dark:text-neutral-500">{{ locale === 'ar' ? 'الاستحقاق' : 'Due' }}:</span> {{ selectedInvoice.due_date || '-' }}</div>
+            <div><span class="text-neutral-400 dark:text-neutral-500">{{ $t('common.total') }}:</span> <span class="font-mono font-bold" dir="ltr">{{ Number(selectedInvoice.total).toLocaleString() }}</span></div>
+            <div><span class="text-neutral-400 dark:text-neutral-500">{{ locale === 'ar' ? 'المستحق' : 'Due' }}:</span> <span class="font-mono font-bold text-amber-500" dir="ltr">{{ Number(selectedInvoice.balance_due).toLocaleString() }}</span></div>
           </div>
 
           <!-- Lines -->
-          <div v-if="selectedInvoice.lines?.length" class="border border-gray-100 rounded-xl overflow-hidden">
+          <div v-if="selectedInvoice.lines?.length" class="border border-neutral-100 dark:border-neutral-800 rounded-xl overflow-hidden">
             <table class="w-full text-xs">
-              <thead><tr class="bg-gray-50"><th class="px-3 py-2 text-start text-gray-400">{{ locale === 'ar' ? 'البند' : 'Item' }}</th><th class="px-3 py-2 text-gray-400">{{ locale === 'ar' ? 'الإجمالي' : 'Total' }}</th></tr></thead>
+              <thead>
+                <tr class="bg-neutral-50 dark:bg-neutral-900">
+                  <th class="px-3 py-2 text-start text-neutral-400 dark:text-neutral-500">{{ locale === 'ar' ? 'البند' : 'Item' }}</th>
+                  <th class="px-3 py-2 text-neutral-400 dark:text-neutral-500">{{ locale === 'ar' ? 'الإجمالي' : 'Total' }}</th>
+                </tr>
+              </thead>
               <tbody>
-                <tr v-for="line in selectedInvoice.lines" :key="line.id" class="border-t border-gray-50">
-                  <td class="px-3 py-2 text-gray-700">{{ line.description }}</td>
-                  <td class="px-3 py-2 font-mono" dir="ltr">{{ Number(line.total).toLocaleString() }}</td>
+                <tr v-for="line in selectedInvoice.lines" :key="line.id" class="border-t border-neutral-50 dark:border-neutral-800">
+                  <td class="px-3 py-2 text-neutral-700 dark:text-neutral-300">{{ line.description }}</td>
+                  <td class="px-3 py-2 font-mono text-neutral-700 dark:text-neutral-300" dir="ltr">{{ Number(line.total).toLocaleString() }}</td>
                 </tr>
               </tbody>
             </table>
@@ -55,10 +60,10 @@
 
           <!-- Payments history -->
           <div v-if="selectedInvoice.payments?.length" class="mt-3">
-            <p class="text-xs text-gray-400 mb-2">{{ locale === 'ar' ? 'المدفوعات' : 'Payments' }}</p>
-            <div v-for="pmt in selectedInvoice.payments" :key="pmt.id" class="flex justify-between text-xs py-1 border-b border-gray-50">
-              <span class="text-gray-500">{{ pmt.date }} — {{ pmt.method }}</span>
-              <span class="font-mono text-emerald-600" dir="ltr">{{ Number(pmt.amount).toLocaleString() }}</span>
+            <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-2">{{ locale === 'ar' ? 'المدفوعات' : 'Payments' }}</p>
+            <div v-for="pmt in selectedInvoice.payments" :key="pmt.id" class="flex justify-between text-xs py-1 border-b border-neutral-50 dark:border-neutral-800">
+              <span class="text-neutral-500 dark:text-neutral-400">{{ pmt.date }} — {{ pmt.method }}</span>
+              <span class="font-mono text-emerald-600 dark:text-emerald-400" dir="ltr">{{ Number(pmt.amount).toLocaleString() }}</span>
             </div>
           </div>
 

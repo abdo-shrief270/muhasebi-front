@@ -2,10 +2,19 @@ import { featureByRoute } from '~/core/subscription/registry'
 import { evaluateFeature } from '~/core/subscription/useFeature'
 import { defaultRouteFor } from '~/core/auth/guards'
 
-const PUBLIC_PREFIXES = ['/auth', '/', '/blog', '/contact', '/privacy', '/terms', '/changelog']
+const PUBLIC_PREFIXES = ['/auth', '/', '/blog', '/contact', '/privacy', '/terms', '/changelog', '/features']
+
+/**
+ * Specific public routes that don't fit a prefix bucket — used for
+ * magic-link landings where the user is by-definition not authenticated
+ * yet (they're about to set their password). Matched before the
+ * /portal-prefix check below so the redirect-to-login doesn't trigger.
+ */
+const PUBLIC_ROUTES = ['/portal/accept-invite']
 
 function isPublicPath(path: string): boolean {
   if (path === '/') return true
+  if (PUBLIC_ROUTES.includes(path)) return true
   return PUBLIC_PREFIXES.some(p => p !== '/' && (path === p || path.startsWith(p + '/')))
 }
 
@@ -24,7 +33,10 @@ export default defineNuxtRouteMiddleware((to) => {
     return navigateTo('/portal')
   }
 
-  if (path.startsWith('/portal') && !auth.isClient) {
+  // /portal/accept-invite stays accessible to authenticated staff too —
+  // they shouldn't get bounced if they're already logged in (e.g. as an
+  // admin) when they click a magic link from a different account's email.
+  if (path.startsWith('/portal') && path !== '/portal/accept-invite' && !auth.isClient) {
     return navigateTo(defaultRouteFor())
   }
 

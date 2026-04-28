@@ -131,6 +131,7 @@ export default {
     currencies: 'العملات',
     webhooks: 'Webhooks',
     landing: 'صفحة الهبوط',
+    branding: 'الهوية البصرية',
     general: 'إعدادات عامة',
     groups: {
       dashboard: 'الرئيسية',

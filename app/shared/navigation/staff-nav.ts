@@ -177,6 +177,7 @@ export const STAFF_NAV: readonly NavGroup[] = [
       { id: 'currencies',   label: 'nav.currencies',   to: '/currency',         icon: 'i-lucide-coins',        feature: 'currencies',              permission: 'view_currencies' },
       { id: 'webhooks',     label: 'nav.webhooks',     to: '/webhooks',         icon: 'i-lucide-webhook',      feature: 'webhooks',                permission: 'view_webhooks' },
       { id: 'landing',      label: 'nav.landing',      to: '/settings/landing', icon: 'i-lucide-layout',       feature: 'landing_page',            permission: 'view_landing' },
+      { id: 'branding',     label: 'nav.branding',     to: '/settings/branding',icon: 'i-lucide-palette',      permission: 'manage_branding' },
       { id: 'general',      label: 'nav.general',      to: '/settings',         icon: 'i-lucide-settings',     feature: 'general_settings',        permission: 'view_settings' },
     ],
   },

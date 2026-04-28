@@ -31,20 +31,21 @@ export interface ClientDetail extends Client {
 
 export interface ClientMessage {
   id: number
-  channel: 'email' | 'whatsapp' | 'sms'
+  client_id: number
+  user_id: number | null
+  /** outbound = firm → client, inbound = client → firm. */
   direction: 'outbound' | 'inbound'
-  subject: string | null
-  message: string
-  sender: { id: number; name: string } | null
-  attachments: Array<{ id: number; name: string; url: string }>
+  subject: string
+  body: string
+  is_read: boolean
+  read_at: string | null
   created_at: string
+  sender?: { id: number; name: string }
 }
 
 export interface SendMessagePayload {
-  channel: 'email' | 'whatsapp' | 'sms'
-  subject?: string
-  message: string
-  attachments?: Array<string | number>
+  subject: string
+  body: string
 }
 
 export interface PortalInvitePayload {

@@ -32,19 +32,19 @@
         </div>
 
         <!-- Recent invoices -->
-        <div v-motion :initial="{ opacity: 0, y: 15 }" :enter="{ opacity: 1, y: 0, transition: { delay: 400 } }" class="bg-white rounded-2xl border border-gray-100/80 overflow-hidden">
-          <div class="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
-            <h3 class="font-semibold text-gray-700">{{ locale === 'ar' ? 'آخر الفواتير' : 'Recent Invoices' }}</h3>
+        <div v-motion :initial="{ opacity: 0, y: 15 }" :enter="{ opacity: 1, y: 0, transition: { delay: 400 } }" class="bg-neutral-0 dark:bg-neutral-900 rounded-2xl border border-neutral-100/80 dark:border-neutral-800 overflow-hidden">
+          <div class="px-5 py-4 border-b border-neutral-50 dark:border-neutral-800 flex items-center justify-between">
+            <h3 class="font-semibold text-neutral-700 dark:text-neutral-200">{{ locale === 'ar' ? 'آخر الفواتير' : 'Recent Invoices' }}</h3>
             <NuxtLink to="/portal/invoices" class="text-sm text-secondary-400">{{ locale === 'ar' ? 'عرض الكل' : 'View all' }}</NuxtLink>
           </div>
-          <div v-if="data?.recent_invoices?.length" class="divide-y divide-gray-50">
-            <div v-for="inv in data.recent_invoices" :key="inv.id" class="px-5 py-3 flex items-center justify-between hover:bg-gray-50/30 transition-colors">
+          <div v-if="data?.recent_invoices?.length" class="divide-y divide-neutral-50 dark:divide-neutral-800">
+            <div v-for="inv in data.recent_invoices" :key="inv.id" class="px-5 py-3 flex items-center justify-between hover:bg-neutral-50/30 dark:hover:bg-neutral-800/40 transition-colors">
               <div>
                 <span class="font-mono text-xs text-primary-500 me-2">{{ inv.invoice_number }}</span>
-                <span class="text-sm text-gray-600">{{ inv.date }}</span>
+                <span class="text-sm text-neutral-600 dark:text-neutral-300">{{ inv.date }}</span>
               </div>
               <div class="flex items-center gap-3">
-                <span class="font-mono text-sm font-medium" dir="ltr">{{ Number(inv.total).toLocaleString() }}</span>
+                <span class="font-mono text-sm font-medium text-neutral-800 dark:text-neutral-100" dir="ltr">{{ Number(inv.total).toLocaleString() }}</span>
                 <UiBadge :color="inv.status === 'paid' ? 'green' : inv.status === 'sent' ? 'blue' : 'orange'">{{ inv.status }}</UiBadge>
               </div>
             </div>

@@ -27,46 +27,46 @@
                   {{ index + 1 }}
                 </template>
               </div>
-              <p class="text-xs mt-2 text-center max-w-[80px]" :class="currentStep === index ? 'text-primary-500 font-semibold' : 'text-gray-400'">
+              <p class="text-xs mt-2 text-center max-w-[80px]" :class="currentStep === index ? 'text-primary-500 font-semibold' : 'text-neutral-400 dark:text-neutral-500'">
                 {{ step.label }}
               </p>
             </div>
             <div
               v-if="index < steps.length - 1"
               class="flex-1 h-0.5 mx-2 rounded transition-colors duration-500"
-              :class="isStepComplete(index) ? 'bg-emerald-400' : 'bg-gray-200'"
+              :class="isStepComplete(index) ? 'bg-emerald-400' : 'bg-neutral-200 dark:bg-neutral-700'"
             ></div>
           </template>
         </div>
 
         <!-- Step content -->
         <Transition name="fade-slide" mode="out-in">
-          <div :key="currentStep" class="bg-white rounded-2xl border border-gray-100/80 p-8">
+          <div :key="currentStep" class="bg-neutral-0 dark:bg-neutral-900 rounded-2xl border border-neutral-100/80 dark:border-neutral-800 p-8">
 
             <!-- Step 1: Company Details -->
             <template v-if="currentStep === 0">
-              <h3 class="text-lg font-bold text-gray-800 mb-1">
+              <h3 class="text-lg font-bold text-neutral-800 dark:text-neutral-100 mb-1">
                 {{ locale === 'ar' ? 'بيانات الشركة' : 'Company Details' }}
               </h3>
-              <p class="text-sm text-gray-400 mb-6">
+              <p class="text-sm text-neutral-400 dark:text-neutral-500 mb-6">
                 {{ locale === 'ar' ? 'أكمل بيانات شركتك الأساسية' : 'Complete your basic company information' }}
               </p>
               <div class="space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label class="block text-sm font-medium text-gray-600 mb-1">{{ locale === 'ar' ? 'البريد الإلكتروني' : 'Email' }}</label>
+                    <label class="block text-sm font-medium text-neutral-600 dark:text-neutral-300 mb-1">{{ locale === 'ar' ? 'البريد الإلكتروني' : 'Email' }}</label>
                     <input v-model="companyForm.email" type="email" class="input-field" />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-gray-600 mb-1">{{ locale === 'ar' ? 'الهاتف' : 'Phone' }}</label>
+                    <label class="block text-sm font-medium text-neutral-600 dark:text-neutral-300 mb-1">{{ locale === 'ar' ? 'الهاتف' : 'Phone' }}</label>
                     <input v-model="companyForm.phone" type="tel" class="input-field" />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-gray-600 mb-1">{{ locale === 'ar' ? 'الرقم الضريبي' : 'Tax ID' }}</label>
+                    <label class="block text-sm font-medium text-neutral-600 dark:text-neutral-300 mb-1">{{ locale === 'ar' ? 'الرقم الضريبي' : 'Tax ID' }}</label>
                     <input v-model="companyForm.tax_id" type="text" class="input-field" />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-gray-600 mb-1">{{ locale === 'ar' ? 'المدينة' : 'City' }}</label>
+                    <label class="block text-sm font-medium text-neutral-600 dark:text-neutral-300 mb-1">{{ locale === 'ar' ? 'المدينة' : 'City' }}</label>
                     <input v-model="companyForm.city" type="text" class="input-field" />
                   </div>
                 </div>
@@ -75,10 +75,10 @@
 
             <!-- Step 2: CoA Template -->
             <template v-if="currentStep === 1">
-              <h3 class="text-lg font-bold text-gray-800 mb-1">
+              <h3 class="text-lg font-bold text-neutral-800 dark:text-neutral-100 mb-1">
                 {{ locale === 'ar' ? 'دليل الحسابات' : 'Chart of Accounts' }}
               </h3>
-              <p class="text-sm text-gray-400 mb-6">
+              <p class="text-sm text-neutral-400 dark:text-neutral-500 mb-6">
                 {{ locale === 'ar' ? 'اختر قالب دليل الحسابات المناسب لنشاطك' : 'Choose the chart of accounts template that fits your business' }}
               </p>
               <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -88,41 +88,41 @@
                   @click="selectedTemplate = template.value"
                   class="p-5 rounded-xl border-2 transition-all duration-200 text-start"
                   :class="selectedTemplate === template.value
-                    ? 'border-primary-500 bg-primary-50/50 shadow-sm'
-                    : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50/50'
+                    ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-500/10 shadow-sm'
+                    : 'border-neutral-100 dark:border-neutral-800 hover:border-neutral-200 dark:hover:border-neutral-700 hover:bg-neutral-50/50 dark:hover:bg-neutral-800/40'
                   "
                 >
                   <p class="text-2xl mb-2">{{ template.icon }}</p>
-                  <p class="font-semibold text-gray-800">{{ template.label }}</p>
-                  <p class="text-xs text-gray-400 mt-1">{{ template.description }}</p>
+                  <p class="font-semibold text-neutral-800 dark:text-neutral-100">{{ template.label }}</p>
+                  <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-1">{{ template.description }}</p>
                 </button>
               </div>
             </template>
 
             <!-- Step 3: First Client -->
             <template v-if="currentStep === 2">
-              <h3 class="text-lg font-bold text-gray-800 mb-1">
+              <h3 class="text-lg font-bold text-neutral-800 dark:text-neutral-100 mb-1">
                 {{ locale === 'ar' ? 'أضف أول عميل' : 'Add Your First Client' }}
               </h3>
-              <p class="text-sm text-gray-400 mb-6">
+              <p class="text-sm text-neutral-400 dark:text-neutral-500 mb-6">
                 {{ locale === 'ar' ? 'أضف بيانات أول عميل لك' : 'Add your first client information' }}
               </p>
               <div class="space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label class="block text-sm font-medium text-gray-600 mb-1">{{ locale === 'ar' ? 'اسم العميل' : 'Client Name' }}</label>
+                    <label class="block text-sm font-medium text-neutral-600 dark:text-neutral-300 mb-1">{{ locale === 'ar' ? 'اسم العميل' : 'Client Name' }}</label>
                     <input v-model="clientForm.name" type="text" class="input-field" />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-gray-600 mb-1">{{ locale === 'ar' ? 'الرقم الضريبي' : 'Tax ID' }}</label>
+                    <label class="block text-sm font-medium text-neutral-600 dark:text-neutral-300 mb-1">{{ locale === 'ar' ? 'الرقم الضريبي' : 'Tax ID' }}</label>
                     <input v-model="clientForm.tax_id" type="text" class="input-field" />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-gray-600 mb-1">{{ locale === 'ar' ? 'البريد الإلكتروني' : 'Email' }}</label>
+                    <label class="block text-sm font-medium text-neutral-600 dark:text-neutral-300 mb-1">{{ locale === 'ar' ? 'البريد الإلكتروني' : 'Email' }}</label>
                     <input v-model="clientForm.email" type="email" class="input-field" />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-gray-600 mb-1">{{ locale === 'ar' ? 'الهاتف' : 'Phone' }}</label>
+                    <label class="block text-sm font-medium text-neutral-600 dark:text-neutral-300 mb-1">{{ locale === 'ar' ? 'الهاتف' : 'Phone' }}</label>
                     <input v-model="clientForm.phone" type="tel" class="input-field" />
                   </div>
                 </div>
@@ -131,20 +131,20 @@
 
             <!-- Step 4: Invite Team -->
             <template v-if="currentStep === 3">
-              <h3 class="text-lg font-bold text-gray-800 mb-1">
+              <h3 class="text-lg font-bold text-neutral-800 dark:text-neutral-100 mb-1">
                 {{ locale === 'ar' ? 'دعوة فريق العمل' : 'Invite Your Team' }}
               </h3>
-              <p class="text-sm text-gray-400 mb-6">
+              <p class="text-sm text-neutral-400 dark:text-neutral-500 mb-6">
                 {{ locale === 'ar' ? 'يمكنك تخطي هذه الخطوة ودعوة الفريق لاحقاً' : 'You can skip this step and invite team members later' }}
               </p>
               <div class="space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label class="block text-sm font-medium text-gray-600 mb-1">{{ locale === 'ar' ? 'الاسم' : 'Name' }}</label>
+                    <label class="block text-sm font-medium text-neutral-600 dark:text-neutral-300 mb-1">{{ locale === 'ar' ? 'الاسم' : 'Name' }}</label>
                     <input v-model="teamForm.name" type="text" class="input-field" />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-gray-600 mb-1">{{ locale === 'ar' ? 'البريد الإلكتروني' : 'Email' }}</label>
+                    <label class="block text-sm font-medium text-neutral-600 dark:text-neutral-300 mb-1">{{ locale === 'ar' ? 'البريد الإلكتروني' : 'Email' }}</label>
                     <input v-model="teamForm.email" type="email" class="input-field" />
                   </div>
                 </div>
@@ -153,7 +153,7 @@
                      Excludes the 'client' role since that goes through the
                      portal-invite flow, not the internal team flow. -->
                 <div>
-                  <label class="block text-sm font-medium text-gray-600 mb-2">{{ locale === 'ar' ? 'الدور' : 'Role' }}</label>
+                  <label class="block text-sm font-medium text-neutral-600 dark:text-neutral-300 mb-2">{{ locale === 'ar' ? 'الدور' : 'Role' }}</label>
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <button
                       v-for="role in roleOptions"
@@ -168,9 +168,9 @@
                     >
                       <div class="flex items-center gap-2 mb-1.5">
                         <UIcon :name="role.icon" class="w-4 h-4 text-primary-500" />
-                        <p class="font-semibold text-gray-800 text-sm">{{ role.label }}</p>
+                        <p class="font-semibold text-neutral-800 dark:text-neutral-100 text-sm">{{ role.label }}</p>
                       </div>
-                      <p class="text-xs text-gray-400 leading-snug">{{ role.description }}</p>
+                      <p class="text-xs text-neutral-400 dark:text-neutral-500 leading-snug">{{ role.description }}</p>
                     </button>
                   </div>
                 </div>
@@ -184,14 +184,14 @@
                   v-motion
                   :initial="{ scale: 0 }"
                   :enter="{ scale: 1, transition: { type: 'spring', stiffness: 200 } }"
-                  class="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6"
+                  class="w-20 h-20 bg-emerald-50 dark:bg-emerald-500/15 rounded-full flex items-center justify-center mx-auto mb-6"
                 >
                   <span class="text-4xl text-emerald-500">✓</span>
                 </div>
-                <h3 class="text-xl font-bold text-gray-800 mb-2">
+                <h3 class="text-xl font-bold text-neutral-800 dark:text-neutral-100 mb-2">
                   {{ locale === 'ar' ? 'تم الإعداد بنجاح!' : 'Setup Complete!' }}
                 </h3>
-                <p class="text-gray-400 mb-8">
+                <p class="text-neutral-400 dark:text-neutral-500 mb-8">
                   {{ locale === 'ar' ? 'أنت جاهز لبدء استخدام محاسبي' : "You're ready to start using Muhasebi" }}
                 </p>
                 <UiAppButton variant="primary" size="lg" @click="navigateTo('/dashboard')">
@@ -201,7 +201,7 @@
             </template>
 
             <!-- Navigation buttons -->
-            <div v-if="currentStep < 4" class="flex items-center justify-between mt-8 pt-6 border-t border-gray-100">
+            <div v-if="currentStep < 4" class="flex items-center justify-between mt-8 pt-6 border-t border-neutral-100 dark:border-neutral-800">
               <UiAppButton
                 v-if="currentStep > 0"
                 variant="ghost"
@@ -344,7 +344,7 @@ function isStepComplete(index: number) {
 function stepCircleClass(index: number) {
   if (isStepComplete(index)) return 'bg-emerald-500 text-white scale-100'
   if (index === currentStep.value) return 'bg-primary-500 text-white scale-110 shadow-lg shadow-primary-500/30'
-  return 'bg-gray-100 text-gray-400'
+  return 'bg-neutral-100 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-500'
 }
 
 async function handleNext() {
@@ -403,6 +403,6 @@ function skipAndFinish() {
 <style scoped>
 @reference "~/assets/css/tokens.css";
 .input-field {
-  @apply w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all text-sm bg-gray-50/50;
+  @apply w-full px-4 py-2.5 border border-neutral-200 dark:border-neutral-800 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all text-sm bg-neutral-50/50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-0;
 }
 </style>

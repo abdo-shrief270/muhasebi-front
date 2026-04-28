@@ -1,14 +1,14 @@
 <template>
   <div>
     <div
-      class="flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-gray-50/80 transition-colors cursor-pointer group"
+      class="flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-neutral-50/80 dark:hover:bg-neutral-800/50 transition-colors cursor-pointer group"
       :style="{ paddingInlineStart: `${depth * 24 + 12}px` }"
       @click="$emit('select', node)"
     >
       <button
         v-if="node.children && node.children.length > 0"
         @click.stop="expanded = !expanded"
-        class="w-5 h-5 flex items-center justify-center text-gray-300 hover:text-gray-500 transition-transform duration-200"
+        class="w-5 h-5 flex items-center justify-center text-neutral-300 dark:text-neutral-600 hover:text-neutral-500 dark:hover:text-neutral-300 transition-transform duration-200"
         :class="{ 'rotate-90': expanded }"
       >
         &#9656;
@@ -17,13 +17,15 @@
 
       <span
         class="w-7 h-7 rounded-lg flex items-center justify-center text-xs flex-shrink-0"
-        :class="node.is_group ? 'bg-primary-50 text-primary-400' : 'bg-gray-50 text-gray-400'"
+        :class="node.is_group
+          ? 'bg-primary-50 dark:bg-primary-500/15 text-primary-400 dark:text-primary-300'
+          : 'bg-neutral-50 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-500'"
       >
         {{ node.is_group ? '&#9776;' : '&#9679;' }}
       </span>
 
-      <span class="font-mono text-xs text-gray-400 min-w-[50px]">{{ node.code }}</span>
-      <span class="text-sm text-gray-700 flex-1">{{ locale === 'ar' ? node.name_ar : node.name_en }}</span>
+      <span class="font-mono text-xs text-neutral-400 dark:text-neutral-500 min-w-[50px]">{{ node.code }}</span>
+      <span class="text-sm text-neutral-700 dark:text-neutral-200 flex-1">{{ locale === 'ar' ? node.name_ar : node.name_en }}</span>
 
       <UiBadge :color="typeColor(node.type)" class="text-[10px]">
         {{ typeLabel(node.type) }}
@@ -31,7 +33,7 @@
 
       <button
         @click.stop="$emit('edit', node)"
-        class="opacity-0 group-hover:opacity-100 p-1 text-gray-300 hover:text-primary-500 transition"
+        class="opacity-0 group-hover:opacity-100 p-1 text-neutral-300 dark:text-neutral-600 hover:text-primary-500 transition"
       >
         &#9998;
       </button>
